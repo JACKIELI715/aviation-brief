@@ -401,6 +401,11 @@ def get_wx(icao, date_str, target_hour_bjt):
         return None
 
 # ── TAF ───────────────────────────────────────────────────────────
+def taf_icao_of(raw):
+    """从TAF原始文本提取ICAO四字码（用于把粘贴的TAF归属到对应机场）。"""
+    m = re.search(r'TAF\s+(?:AMD\s+|COR\s+)?([A-Z]{4})', raw or '')
+    return m.group(1) if m else ''
+
 def parse_taf_issue(raw_taf):
     """Extract ISSUE time from raw TAF text."""
     m = re.search(r'TAF\s+\w+\s+(\d{6})Z', raw_taf)
@@ -1289,8 +1294,10 @@ def build_brief(params):
     except Exception:
         dep_win = arr_win = (None, None)
 
-    # Compute precise UTC date/hour for TAF
+    # Compute precise UTC date/hour for TAF (到达场)
     taf_utc_date, taf_utc_h, taf_utc_m = bjt_datetime_to_utc_date(date, arr_time, is_overnight)
+    # 出发场TAF目标时刻（起飞不跨日）
+    dep_taf_utc_date, dep_taf_utc_h, dep_taf_utc_m = bjt_datetime_to_utc_date(date, dep_time, False)
 
     result = {
         'dep': dep, 'arr': arr, 'date': date,
@@ -1320,6 +1327,7 @@ def build_brief(params):
         futures['arr_wx_2'] = executor.submit(get_wx, arr, arr_date_2, arr_hour_2)
         # TAF — use precise UTC date
         futures['taf'] = executor.submit(get_taf, arr, taf_utc_date, taf_utc_h, taf_utc_m)
+        futures['dep_taf'] = executor.submit(get_taf, dep, dep_taf_utc_date, dep_taf_utc_h, dep_taf_utc_m)
         # NOTAM
         futures['dep_notam'] = executor.submit(get_notams, dep)
         futures['arr_notam'] = executor.submit(get_notams, arr)
@@ -1366,13 +1374,22 @@ def build_brief(params):
     manual_notams, manual_unrecognized, manual_fmt = parse_manual_notams(manual_notam_text)
     result['notam_unrecognized'] = manual_unrecognized
 
-    # TAF override
+    # TAF override — 粘贴的TAF按其ICAO归属到出发/到达场（缺省归到达场）
     if manual_taf_text.strip():
+        m_icao = taf_icao_of(manual_taf_text)
+        to_dep = (m_icao == dep and dep != arr)
+        t_key = 'dep_taf' if to_dep else 'taf'
+        t_args = ((dep_taf_utc_h, dep_taf_utc_m, dep_taf_utc_date)
+                  if to_dep else (taf_utc_h, taf_utc_m, taf_utc_date))
+        cur = result.get(t_key)
         if taf_mode == 'manual':
-            result['taf'] = build_manual_taf(manual_taf_text, taf_utc_h, taf_utc_m, taf_utc_date)
-        elif taf_mode == 'auto' and result.get('taf', {}).get('error'):
+            result[t_key] = build_manual_taf(manual_taf_text, *t_args)
+            if dep != arr:
+                other = 'taf' if to_dep else 'dep_taf'
+                result[other] = {'error': 'NO_TAF', 'message': '手动模式：此机场未粘贴TAF'}
+        elif taf_mode == 'auto' and ((not cur) or cur.get('error')):
             # Auto mode: manual paste as fallback when online TAF fails
-            result['taf'] = build_manual_taf(manual_taf_text, taf_utc_h, taf_utc_m, taf_utc_date)
+            result[t_key] = build_manual_taf(manual_taf_text, *t_args)
 
     # NOTAM override
     if notam_mode in ('merge', 'manual'):

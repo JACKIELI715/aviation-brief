@@ -922,6 +922,8 @@ async function fetchBrief() {
         return;
       }
       if (data.error) { showError(data.error); return; }
+      // 云端机房 IP 可能被 Open-Meteo / AviationWeather 限流 → 缺失项回退浏览器直连补取
+      await fillClientFallbacks(data, dep, arr, date, dep_time, arr_time);
     } else {
       // ── 本地模式：WX/TAF直连 + NOTAM在线(代理)/缓存/手动粘贴 ──
       document.getElementById('loading-text').textContent = '本地模式: 获取WX / 在线NOTAM中…';
@@ -934,6 +936,61 @@ async function fetchBrief() {
   } finally {
     loadEl.classList.remove('active');
     btn.disabled = false;
+  }
+}
+
+// ═══════════════════════ 服务器模式缺失项回退 ═══════════════════════
+// 云端服务器 IP 可能被 Open-Meteo / AviationWeather 限流；缺失时改由浏览器直连补取
+async function fillClientFallbacks(data, dep, arr, date, dep_time, arr_time) {
+  const settings = getSettings();
+  const isOvernight = parseInt(arr_time) < parseInt(dep_time);
+  const arrDate = isOvernight
+    ? new Date(new Date(date + 'T00:00:00Z').getTime() + 86400000).toISOString().slice(0, 10)
+    : date;
+  const h1 = parseInt(arr_time.slice(0, 2));
+  const arrDate2 = (h1 + 1 >= 24)
+    ? new Date(new Date(arrDate + 'T00:00:00Z').getTime() + 86400000).toISOString().slice(0, 10)
+    : arrDate;
+
+  const jobs = [];
+  if (!data.dep_wx) {
+    jobs.push(fetchWxDirect(dep, date, parseInt(dep_time.slice(0, 2)))
+      .then(w => { if (w) data.dep_wx = w; }).catch(() => {}));
+  }
+  if (!(data.arr_wx && data.arr_wx.vis_1 != null)) {
+    jobs.push((async () => {
+      const w1 = await fetchWxDirect(arr, arrDate, h1).catch(() => null);
+      if (!w1) return;
+      const w2 = await fetchWxDirect(arr, arrDate2, (h1 + 1) % 24).catch(() => null);
+      data.arr_wx = {
+        ...w1, icao: arr,
+        pop_1: w1.pop, precip_1: w1.precip, wind_dir_1: w1.wind_dir,
+        wind_spd_1: w1.wind_spd, wind_gst_1: w1.wind_gst, vis_1: w1.vis, wx_name_1: w1.wx_name,
+      };
+      if (w2) {
+        data.arr_wx.pop_2 = w2.pop; data.arr_wx.precip_2 = w2.precip;
+        data.arr_wx.wind_dir_2 = w2.wind_dir; data.arr_wx.wind_spd_2 = w2.wind_spd;
+        data.arr_wx.wind_gst_2 = w2.wind_gst; data.arr_wx.vis_2 = w2.vis; data.arr_wx.wx_name_2 = w2.wx_name;
+      }
+      data.arr_wx.risk = riskWx(
+        Math.max(w1.pop, w2 ? w2.pop : w1.pop),
+        Math.min(w1.vis, w2 ? w2.vis : w1.vis),
+        Math.max(w1.wx_code, w2 ? w2.wx_code : w1.wx_code)
+      );
+    })());
+  }
+  await Promise.allSettled(jobs);
+
+  // TAF：在线获取失败时回退浏览器直连（手动模式不触发）
+  if (settings.taf_mode !== 'manual') {
+    if (!data.dep_taf || data.dep_taf.error) {
+      const td = await fetchTafDirect(dep, dep_time, date, false);
+      if (td && !td.error) data.dep_taf = td;
+    }
+    if (!data.taf || data.taf.error) {
+      const ta = await fetchTafDirect(arr, arr_time, date, isOvernight);
+      if (ta && !ta.error) data.taf = ta;
+    }
   }
 }
 
@@ -992,12 +1049,22 @@ async function buildLocalBrief(dep, arr, date, dep_time, arr_time) {
   }
   await Promise.allSettled(wxPromises);
 
-  // TAF: 按来源设置
+  // TAF: 出发场 + 到达场，按来源设置
+  const manualNoTaf = { error: 'NO_TAF', message: '手动模式：此机场未粘贴TAF' };
   if (settings.taf_mode === 'manual' && manualTaf) {
-    data.taf = parseTafManual(manualTaf, arr, arr_time, date, isOvernight);
+    const mIcao = tafIcaoOf(manualTaf);
+    if (mIcao === dep && dep !== arr) {
+      data.dep_taf = parseTafManual(manualTaf, dep, dep_time, date, false);
+      data.taf = manualNoTaf;
+    } else {
+      data.taf = parseTafManual(manualTaf, arr, arr_time, date, isOvernight);
+      data.dep_taf = manualNoTaf;
+    }
   } else if (settings.taf_mode === 'manual') {
     data.taf = { error: 'NO_TAF', message: '手动模式：未粘贴TAF，请展开粘贴框粘贴' };
+    data.dep_taf = { error: 'NO_TAF', message: '手动模式：未粘贴TAF，请展开粘贴框粘贴' };
   } else {
+    data.dep_taf = await fetchTafDirect(dep, dep_time, date, false);
     data.taf = await fetchTafDirect(arr, arr_time, date, isOvernight);
     if (data.taf.error && manualTaf) {
       data.taf = parseTafManual(manualTaf, arr, arr_time, date, isOvernight);
@@ -1073,6 +1140,11 @@ function riskWx(pop, vis, code) {
 }
 
 // ═══════════════════════ TAF 解析 ═══════════════════════
+function tafIcaoOf(raw) {
+  const m = (raw || '').match(/TAF\s+(?:AMD\s+|COR\s+)?([A-Z]{4})/);
+  return m ? m[1] : '';
+}
+
 async function fetchTafDirect(icao, arrTime, date, isOvernight) {
   try {
     const resp = await fetch(`https://aviationweather.gov/api/data/taf?ids=${icao}&format=raw`);
@@ -1551,32 +1623,34 @@ function renderResult(data) {
     if (data.arr_coords_ok !== true) conclusionItems.push(`到达场 ${data.arr} WX数据缺失 — 请人工核实`);
   }
 
-  if (data.taf) {
-    const t = data.taf;
+  function appendTaf(t, icao, timeLabel, roleLabel) {
+    if (!t) return;
     if (t.error) {
-      html += `<div class="section"><div class="section-header">TAF · ${data.arr}</div>
-        <div class="section-line risk-low">${tagHtml('LOW')}${data.arr} TAF 不可用 — ${escapeHtml(t.message || '')}</div></div>`;
-      conclusionItems.push(`${data.arr} TAF缺失 — 请粘贴TAF后重新GET BRIEF`);
-    } else {
-      const coverLabel = t.covers ? `COVER ${data.arr_time}BJT` : `NOT COVER ${data.arr_time}BJT`;
-      const tRisk = t.covers ? (t.risk || 'LOW') : 'LOW';
-      const tCls = t.covers && t.risk === 'HIGH' ? 'risk-high' : t.covers && t.risk === 'MED' ? 'risk-med' : 'risk-low';
-      html += `<div class="section"><div class="section-header">TAF · ${data.arr} <span class="count" style="margin-left:auto">${t.source}</span></div>
-        <div class="section-line ${tCls}">${tagHtml(tRisk)}${data.arr} TAF | ISSUE ${t.issue} / VALID ${t.valid} / ${coverLabel}</div>`;
-      if (t.covers) {
-        let wxParts = [`BASE ${t.base}`];
-        if (t.target_groups && t.target_groups.length > 0) {
-          for (const g of t.target_groups) wxParts.push(`<span class="bold">${escapeHtml(g)}</span>`);
-        }
-        html += `<div class="section-line ${tCls}">${tagHtml(t.risk || 'LOW')}${data.arr} TAF WX | ${wxParts.join(' / ')}</div>`;
-        if (t.risk === 'HIGH') { overallRisk = 'HIGH'; conclusionItems.push(`TAF ${data.arr} 落地时段落入TEMPO/PROB窗口`); }
-        else if (t.risk === 'MED') { if (overallRisk === 'LOW') overallRisk = 'MED'; conclusionItems.push(`TAF ${data.arr} 落地时段天气需关注`); }
-      } else {
-        conclusionItems.push(`TAF ${data.arr} 不覆盖落地时段 ${data.arr_time}BJT`);
-      }
-      html += `</div>`;
+      html += `<div class="section"><div class="section-header">TAF · ${icao}</div>
+        <div class="section-line risk-low">${tagHtml('LOW')}${icao} TAF 不可用 — ${escapeHtml(t.message || '')}</div></div>`;
+      conclusionItems.push(`${icao} TAF缺失 — 请粘贴TAF后重新GET BRIEF`);
+      return;
     }
+    const coverLabel = t.covers ? `COVER ${timeLabel}BJT` : `NOT COVER ${timeLabel}BJT`;
+    const tRisk = t.covers ? (t.risk || 'LOW') : 'LOW';
+    const tCls = t.covers && t.risk === 'HIGH' ? 'risk-high' : t.covers && t.risk === 'MED' ? 'risk-med' : 'risk-low';
+    html += `<div class="section"><div class="section-header">TAF · ${icao} <span class="count" style="margin-left:auto">${t.source}</span></div>
+      <div class="section-line ${tCls}">${tagHtml(tRisk)}${icao} TAF | ISSUE ${t.issue} / VALID ${t.valid} / ${coverLabel}</div>`;
+    if (t.covers) {
+      let wxParts = [`BASE ${t.base}`];
+      if (t.target_groups && t.target_groups.length > 0) {
+        for (const g of t.target_groups) wxParts.push(`<span class="bold">${escapeHtml(g)}</span>`);
+      }
+      html += `<div class="section-line ${tCls}">${tagHtml(t.risk || 'LOW')}${icao} TAF WX | ${wxParts.join(' / ')}</div>`;
+      if (t.risk === 'HIGH') { overallRisk = 'HIGH'; conclusionItems.push(`TAF ${icao} ${roleLabel}时段落入TEMPO/PROB窗口`); }
+      else if (t.risk === 'MED') { if (overallRisk === 'LOW') overallRisk = 'MED'; conclusionItems.push(`TAF ${icao} ${roleLabel}时段天气需关注`); }
+    } else {
+      conclusionItems.push(`TAF ${icao} 不覆盖${roleLabel}时段 ${timeLabel}BJT`);
+    }
+    html += `</div>`;
   }
+  appendTaf(data.dep_taf, data.dep, data.dep_time, '起飞');
+  appendTaf(data.taf, data.arr, data.arr_time, '落地');
 
   if (data.dep_notam) {
     html += renderNotamSection(data.dep_notam, data.dep, data.dep_name);
