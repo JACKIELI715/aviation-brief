@@ -162,16 +162,25 @@ if ('serviceWorker' in navigator) {
   .section-line.risk-med  { background: rgba(210,153,29,0.1); border-left: 2px solid var(--orange); }
   .section-line.risk-low  { background: var(--bg2); border-left: 2px solid var(--gray); color: var(--muted); }
   .section-line.risk-gnd  { background: rgba(88,166,255,0.06); border-left: 2px solid var(--accent); }
-  .section-line.risk-ck   { background: rgba(63,185,80,0.06); border-left: 2px solid var(--accent2); }
   .section-line .bold { font-weight: 700; color: var(--ink); }
   .section-line .tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 3px; margin-right: 8px; vertical-align: 1px; }
   .tag-high { background: var(--red); color: #fff; }
   .tag-med  { background: var(--orange); color: #000; }
   .tag-low  { background: var(--gray); color: var(--muted); }
   .tag-gnd  { background: var(--accent); color: #fff; }
-  .tag-ck   { background: var(--accent2); color: #000; }
   .tag-go   { background: var(--accent2); color: #000; }
   .tag-nogo { background: var(--red); color: #fff; }
+  details.fold-sec { margin-top: 8px; border-top: 1px dashed var(--rule); padding-top: 8px; }
+  details.fold-sec > summary {
+    cursor: pointer; list-style: none; font-size: 11px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 0;
+    display: flex; align-items: center; gap: 8px;
+  }
+  details.fold-sec > summary::-webkit-details-marker { display: none; }
+  details.fold-sec > summary::before { content: '▸'; font-size: 10px; }
+  details.fold-sec[open] > summary::before { content: '▾'; }
+  details.fold-sec > summary .count { font-weight: 400; font-size: 10px; margin-left: auto; }
+  details.fold-sec > summary + .section-line { margin-top: 6px; }
 
   .conclusion { margin-top: 20px; padding: 16px; border-radius: var(--radius); border: 2px solid var(--rule); background: var(--bg2); }
   .conclusion.go   { border-color: var(--accent2); background: rgba(63,185,80,0.06); }
@@ -820,11 +829,11 @@ function classifyNotam(notam, flightWindow) {
   // 排除表头 "影响的飞行程序及起飞航径区/备注" (非真实影响) → 负向先行断言
   if (/影响(?!的飞行程序).*?(?:起飞航径|爬升梯度|进近程序|着陆性能)/.test(desc)) return 'MED';
 
-  // CHECK TIME: 导航设备 (EN+CN)
-  if (/VOR\/DME|DVOR\/DME/.test(desc) && /U\/S|WITHDRAWN|OUT OF SERVICE|不提供使用|限用|停用/.test(desc)) return 'CHECK TIME';
-  if (/\bILS\b|\bDME\b|\bNDB\b|\bVOR\b/.test(desc) && /U\/S|OUT OF SERVICE|ON TEST|DO NOT USE|不提供使用|停用/.test(desc)) return 'CHECK TIME';
-  if (/APCH LGT.*DOWNGRADE|DOWNGRADE TO CAT/.test(desc)) return 'CHECK TIME';
-  if (/(SID|STAR|IAC|PROCEDURE).*?(U\/S|停用)/.test(desc)) return 'CHECK TIME';
+  // MED: 导航设备不工作/测试/禁止使用 (EN+CN) — 归入 MED, 按时间窗口判定
+  if (/VOR\/DME|DVOR\/DME/.test(desc) && /U\/S|WITHDRAWN|OUT OF SERVICE|不提供使用|限用|停用/.test(desc)) return 'MED';
+  if (/\bILS\b|\bDME\b|\bNDB\b|\bVOR\b/.test(desc) && /U\/S|OUT OF SERVICE|ON TEST|DO NOT USE|不提供使用|停用|测试|禁止使用/.test(desc)) return 'MED';
+  if (/APCH LGT.*DOWNGRADE|DOWNGRADE TO CAT/.test(desc)) return 'MED';
+  if (/(SID|STAR|IAC|PROCEDURE).*?(U\/S|停用)/.test(desc)) return 'MED';
 
   // MED: 滑行道整段关闭 (EN: "TWY Q11 CLSD BTN ..." = Q11整段 → MED)
   if (/TWY\s+\w+\s+CLSD(?!\s+ONLY|\s+BTN.*ONLY|\s+(?:EAST|WEST|NORTH|SOUTH)\s+OF\b)/.test(desc)) return 'MED';
@@ -1314,6 +1323,25 @@ function parseIcaoBlocks(text, byAirport, unrecognized) {
     }
     const id = mId[1];
 
+    // 紧凑格式: "A3749/26 WMKK 202610300100-202610300400 描述..."
+    const mCompact = b.match(/^([A-Z]\d{4}\/\d{2})\s+([A-Z]{4})\s+(\d{10,12})\s*-\s*(\d{10,12})\b([\s\S]*)/);
+    if (mCompact) {
+      const cIcao = mCompact[2];
+      const fmtDt = s => s.length === 10
+        ? `20${s.slice(0,2)}-${s.slice(2,4)}-${s.slice(4,6)} ${s.slice(6,8)}:${s.slice(8,10)} UTC`
+        : `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)} ${s.slice(8,10)}:${s.slice(10,12)} UTC`;
+      const effective = fmtDt(mCompact[3]);
+      const expires = fmtDt(mCompact[4]);
+      const desc = mCompact[5].replace(/\s+/g, ' ').trim();
+      if (!byAirport[cIcao]) byAirport[cIcao] = [];
+      byAirport[cIcao].push({
+        id, q_code: '', priority: '5',
+        effective, expires, desc, expired: notamExpired(expires, id),
+        manual: true,
+      });
+      continue;
+    }
+
     // 机场识别: 仅认 A) 行；缺失则视为未解读 → 末端列出
     const mA = b.match(/A\)\s*:?\s*([A-Z]{4})\b/);
     if (!mA) {
@@ -1349,6 +1377,14 @@ function parseIcaoBlocks(text, byAirport, unrecognized) {
     }
     const icao = mA[1];
 
+    // 生效时间: B) 字段 (YYMMDDHHMM)
+    let effective = '';
+    const mB = b.match(/B\)\s*:?\s*(\d{10})/);
+    if (mB) {
+      const s = mB[1];
+      effective = `20${s.slice(0,2)}-${s.slice(2,4)}-${s.slice(4,6)} ${s.slice(6,8)}:${s.slice(8,10)} UTC`;
+    }
+
     // 有效期: C) ICAO格式 → TO:行 → PERM/UFN
     let expires = '';
     let mC = b.match(/C\)\s*:?\s*(\d{10})/);
@@ -1374,7 +1410,7 @@ function parseIcaoBlocks(text, byAirport, unrecognized) {
     if (!byAirport[icao]) byAirport[icao] = [];
     byAirport[icao].push({
       id, q_code: mQ ? mQ[1] : '', priority: '5',
-      effective: '', expires, desc, expired: notamExpired(expires, id),
+      effective, expires, desc, expired: notamExpired(expires, id),
       manual: true,
     });
   }
@@ -1533,7 +1569,7 @@ async function fetchNotamsOnline(icao) {
 function assembleNotams(icao, manualList, mode, onlineList, flightWindow) {
   mode = mode || 'merge';
   onlineList = (onlineList && onlineList.length) ? onlineList : null; // null = 未获取/获取失败
-  const result = { active: [], med: [], gnd_check: [], check_time: [], low: [] };
+  const result = { active: [], med: [], gnd_check: [], low: [], folded: [] };
 
   const cached = (NOTAM_CACHE[icao] || {}).notams || [];
   const base = onlineList || cached;                 // 在线优先，其次内置缓存
@@ -1571,19 +1607,23 @@ function assembleNotams(icao, manualList, mode, onlineList, flightWindow) {
   }
 
   for (const n of notams) {
-    const cat = classifyNotam(n, flightWindow);
-    result[{ 'MED': 'med', 'GND CHECK': 'gnd_check', 'CHECK TIME': 'check_time', 'LOW': 'low' }[cat]].push(n);
+    const cat = classifyNotam(n, null);            // 真实等级 (忽略时间窗口)
+    n.cat = cat;
+    const timeIrr = !!(flightWindow && !notamOverlapsFlight(n, flightWindow));
+    n.timeIrrelevant = timeIrr;
     result.active.push(n);
+    if (timeIrr) { result.folded.push(n); continue; }  // 不在生效时间范围 → 折叠区
+    result[{ 'MED': 'med', 'GND CHECK': 'gnd_check', 'LOW': 'low' }[cat]].push(n);
   }
   return result;
 }
 
 // ═══════════════════════ 渲染 (同服务器版) ═══════════════════════
 function tagCls(risk) {
-  return { HIGH: 'tag-high', MED: 'tag-med', LOW: 'tag-low', 'GND CHECK': 'tag-gnd', 'CHECK TIME': 'tag-ck' }[risk] || 'tag-low';
+  return { HIGH: 'tag-high', MED: 'tag-med', LOW: 'tag-low', 'GND CHECK': 'tag-gnd' }[risk] || 'tag-low';
 }
 function lineCls(risk) {
-  return { HIGH: 'risk-high', MED: 'risk-med', LOW: 'risk-low', 'GND CHECK': 'risk-gnd', 'CHECK TIME': 'risk-ck' }[risk] || 'risk-low';
+  return { HIGH: 'risk-high', MED: 'risk-med', LOW: 'risk-low', 'GND CHECK': 'risk-gnd' }[risk] || 'risk-low';
 }
 function tagHtml(risk) { return `<span class="tag ${tagCls(risk)}">${risk}</span>`; }
 
@@ -1731,12 +1771,19 @@ function renderNotamSection(notamData, icao, name) {
   for (const n of (notamData.gnd_check || [])) {
     h += `<div class="section-line risk-gnd">${tagHtml('GND CHECK')}${escapeHtml(n.id)} | ${escapeHtml(summarizeGnd(n.desc))}${formatExpiry(n) ? ' | ' + escapeHtml(formatExpiry(n)) : ''}</div>`;
   }
-  for (const n of (notamData.check_time || [])) {
-    h += `<div class="section-line risk-ck">${tagHtml('CHECK TIME')}${escapeHtml(n.id)} | ${escapeHtml(summarizeCheck(n.desc))}${formatExpiry(n) ? ' | ' + escapeHtml(formatExpiry(n)) : ''}</div>`;
-  }
   for (const n of (notamData.low || [])) {
-    const tNote = (n.timeIrrelevant || n.time_irrelevant) ? '不在生效时间范围内 · ' : '';
-    h += `<div class="section-line risk-low">${tagHtml('LOW')}${escapeHtml(n.id)} | ${tNote}${escapeHtml(summarizeLow(n.desc))}${formatExpiry(n) ? ' | ' + escapeHtml(formatExpiry(n)) : ''}</div>`;
+    h += `<div class="section-line risk-low">${tagHtml('LOW')}${escapeHtml(n.id)} | ${escapeHtml(summarizeLow(n.desc))}${formatExpiry(n) ? ' | ' + escapeHtml(formatExpiry(n)) : ''}</div>`;
+  }
+  // ── 时间无关通告: 不在本次航班时段(起飞前1h~落地后3h)内生效 → 默认折叠 ──
+  const folded = notamData.folded || [];
+  if (folded.length) {
+    h += `<details class="fold-sec"><summary>时间无关通告 · 不在本次航班时段(起飞前1h~落地后3h) <span class="count">${folded.length}条</span></summary>`;
+    for (const n of folded) {
+      const cat = n.cat || 'LOW';
+      const sum = cat === 'MED' ? summarizeMed(n.desc) : (cat === 'GND CHECK' ? summarizeGnd(n.desc) : summarizeLow(n.desc));
+      h += `<div class="section-line risk-low">${tagHtml(cat)}${escapeHtml(n.id)} | ${escapeHtml(sum)}${formatExpiry(n) ? ' | ' + escapeHtml(formatExpiry(n)) : ''}</div>`;
+    }
+    h += `</details>`;
   }
   h += `</div>`;
   return h;
@@ -1760,6 +1807,9 @@ function summarizeBird(desc) {
 }
 
 function summarizeMed(desc) {
+  // ── 导航设备 (ILS/VOR/DME/NDB) 不工作/测试/禁限用 — 极简优先 ──
+  const nav = summarizeNav(desc);
+  if (nav) return nav;
   // ── 鸟类活动：极简优先 ──
   const bird = summarizeBird(desc);
   if (bird) return bird;
@@ -1863,38 +1913,24 @@ function summarizeGnd(desc) {
   return first.length > 120 ? first.substring(0, 120) + '…' : first;
 }
 
-function summarizeCheck(desc) {
+function summarizeNav(desc) {
   const d = desc.toUpperCase();
-  if (d.includes('VOR/DME') && d.includes('U/S')) {
-    const name = d.match(/(\w+)\s+VOR\/DME/);
-    const freq = d.match(/(\d+\.\d+)\s*MHZ/);
-    if (name && freq) return `${name[1]} VOR/DME ${freq[1]}MHz 不工作`;
-    if (name) return `${name[1]} VOR/DME 不工作`;
-    return 'VOR/DME不工作';
-  }
-  if (d.includes('ILS') && d.includes('U/S')) {
-    const rwy = d.match(/RWY\s*(\w[\w-]*)/);
-    if (rwy) return `跑道${rwy[1]} ILS 不工作`;
-    return 'ILS不工作';
-  }
-  if (d.includes('DME') && d.includes('U/S')) {
-    const rwy = d.match(/RWY\s*(\w[\w-]*)/);
-    if (rwy) return `跑道${rwy[1]} DME 不工作`;
-    return 'DME不工作';
-  }
-  if (d.includes('DUE TO') && (d.includes('SID') || d.includes('STAR') || d.includes('IAC'))) {
-    const cause = d.match(/DUE TO\s+(.+?)\s+U\/S/);
-    const cn = cause ? cause[1].trim() : '';
-    if (d.includes('SID')) return cn ? `因${cn}不工作 SID程序暂停` : 'SID程序暂停使用';
-    if (d.includes('STAR')) return cn ? `因${cn}不工作 STAR程序暂停` : 'STAR程序暂停使用';
-    if (d.includes('IAC')) return cn ? `因${cn}不工作 进近程序暂停` : '进近程序暂停使用';
-  }
-  if (d.includes('LIMITED TO USE')) {
-    const name = d.match(/(\w+)\s+VOR\/DME/);
-    return name ? `${name[1]} VOR/DME 使用受限` : '导航台使用受限';
-  }
-  const first = desc.split(/[.;。；]/)[0].trim();
-  return first.length > 120 ? first.substring(0, 120) + '…' : first;
+  if (!/\bILS\b|\bLOC\b|\bDME\b|\bNDB\b|\bVOR\b|VOR\/DME|DVOR\/DME/.test(d)) return null;
+  if (!/U\/S|OUT OF SERVICE|ON TEST|DO NOT USE|WITHDRAWN|LIMITED TO USE|不工作|不提供使用|停用|限用|使用受限|测试|禁止使用/.test(d)) return null;
+  const mRwy = d.match(/RWY\s*(\d{1,2}[RLC]?)/);
+  const gp = /\bGP\b|GLIDE\s*PATH|下滑/.test(d) ? '下滑台' : '';
+  const type = /ILS/.test(d) ? 'ILS'
+    : (/(?:D)?VOR\/DME/.test(d) ? 'VOR/DME'
+    : (/\bDME\b/.test(d) ? 'DME'
+    : (/\bNDB\b/.test(d) ? 'NDB' : (/\bLOC\b/.test(d) ? 'LOC' : 'VOR'))));
+  let state;
+  if (/ON TEST|测试中|正在测试/.test(d)) state = '测试中(禁止使用)';
+  else if (/U\/S|OUT OF SERVICE|WITHDRAWN|不工作|不提供使用|停用/.test(d)) state = '不工作';
+  else if (/LIMITED TO USE|限用|使用受限/.test(d)) state = '使用受限';
+  else if (/DO NOT USE|禁止使用/.test(d)) state = '禁止使用';
+  else state = '状态异常';
+  if (/FALSE INDICATION|错误指示|虚假指示/.test(d)) state += '，可能错误指示';
+  return `${mRwy ? '跑道' + mRwy[1] + ' ' : ''}${type}${gp}${state}`;
 }
 
 // ── 障碍物/塔吊专用简练摘要 (EN+CN) ──

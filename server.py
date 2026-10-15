@@ -667,15 +667,15 @@ def classify_notam(notam, fw_start=None, fw_end=None):
     if re.search(r'影响(?!的飞行程序).*?(?:起飞航径|爬升梯度|进近程序|着陆性能)', desc):
         return 'MED'
 
-    # CHECK TIME: NAV aids (EN+CN)
+    # MED: NAV aids U/S / ON TEST / DO NOT USE (EN+CN) — 归入 MED, 按时间窗口判定
     if re.search(r'VOR/DME|DVOR/DME', desc) and re.search(r'U/S|WITHDRAWN|OUT OF SERVICE|不提供使用|限用|停用', desc):
-        return 'CHECK TIME'
-    if re.search(r'\bILS\b|\bDME\b|\bNDB\b|\bVOR\b', desc) and re.search(r'U/S|OUT OF SERVICE|ON TEST|DO NOT USE|不提供使用|停用', desc):
-        return 'CHECK TIME'
+        return 'MED'
+    if re.search(r'\bILS\b|\bDME\b|\bNDB\b|\bVOR\b', desc) and re.search(r'U/S|OUT OF SERVICE|ON TEST|DO NOT USE|不提供使用|停用|测试|禁止使用', desc):
+        return 'MED'
     if re.search(r'APCH LGT.*DOWNGRADE|DOWNGRADE TO CAT', desc):
-        return 'CHECK TIME'
+        return 'MED'
     if re.search(r'(SID|STAR|IAC|PROCEDURE).*?(U/S|停用)', desc):
-        return 'CHECK TIME'
+        return 'MED'
 
     # MED: taxiway full closure (EN)
     if re.search(r'TWY\s+\w+\s+CLSD(?!\s+ONLY|\s+BTN.*ONLY|\s+(?:EAST|WEST|NORTH|SOUTH)\s+OF\b)', desc):
@@ -763,14 +763,22 @@ def classify_notam(notam, fw_start=None, fw_end=None):
     return 'LOW'
 
 def classify_notam_list(notams, fw_start=None, fw_end=None):
-    """Classify a list of NOTAMs into categories. Returns structured dict."""
-    res = {'active': [], 'med': [], 'gnd_check': [], 'check_time': [], 'low': []}
-    cat_map = {'MED': 'med', 'GND CHECK': 'gnd_check', 'CHECK TIME': 'check_time', 'LOW': 'low'}
+    """Classify a list of NOTAMs into categories. Returns structured dict.
+    Time-irrelevant NOTAMs (outside the flight window) go to 'folded'."""
+    res = {'active': [], 'med': [], 'gnd_check': [], 'low': [], 'folded': []}
+    cat_map = {'MED': 'med', 'GND CHECK': 'gnd_check', 'LOW': 'low'}
     for n in notams:
         nn = dict(n)  # 复制一份, 避免把随航班变化的 timeIrrelevant 标志写回 NOTAM 缓存
-        cat = classify_notam(nn, fw_start, fw_end)
-        res[cat_map[cat]].append(nn)
+        cat = classify_notam(nn, None, None)   # 真实等级 (忽略时间窗口)
+        nn['cat'] = cat
+        time_irr = bool(fw_start is not None and fw_end is not None
+                        and not notam_overlaps_flight(nn, fw_start, fw_end))
+        nn['timeIrrelevant'] = time_irr
         res['active'].append(nn)
+        if time_irr:
+            res['folded'].append(nn)           # 不在生效时间范围 → 折叠区
+        else:
+            res[cat_map[cat]].append(nn)
     return res
 
 def check_notam_future(effective_str, notam_id=None):
@@ -863,11 +871,38 @@ def _parse_icao_notams(text):
                 unrecognized.append(truncate_text(b, 200))
             continue
         notam_id = m_id.group(1)
+
+        # 紧凑格式: "A3749/26 WMKK 202610300100-202610300400 描述..."
+        m_compact = re.match(
+            r'([A-Z]\d{4}/\d{2})\s+([A-Z]{4})\s+(\d{10,12})\s*-\s*(\d{10,12})\b([\s\S]*)', b)
+        if m_compact:
+            def _fmt_dt(sv):
+                if len(sv) == 10:
+                    return f'20{sv[:2]}-{sv[2:4]}-{sv[4:6]} {sv[6:8]}:{sv[8:10]} UTC'
+                return f'{sv[:4]}-{sv[4:6]}-{sv[6:8]} {sv[8:10]}:{sv[10:12]} UTC'
+            c_icao = m_compact.group(2)
+            c_eff = _fmt_dt(m_compact.group(3))
+            c_exp = _fmt_dt(m_compact.group(4))
+            c_desc = re.sub(r'\s+', ' ', m_compact.group(5)).strip()
+            result.setdefault(c_icao, []).append({
+                'id': notam_id, 'q_code': '', 'priority': '5',
+                'effective': c_eff, 'expires': c_exp, 'desc': c_desc,
+                'expired': check_notam_expired(c_exp, notam_id),
+                'manual': True,
+            })
+            continue
+
         m_a = re.search(r'A\)\s*:?\s*([A-Z]{4})\b', b)
         if not m_a:
             unrecognized.append(f'[{notam_id}] 缺少A)机场代码 → ' + truncate_text(b, 150))
             continue
         icao = m_a.group(1)
+        # 生效时间: B) 字段 (YYMMDDHHMM)
+        effective = ''
+        m_b = re.search(r'B\)\s*:?\s*(\d{10})', b)
+        if m_b:
+            s = m_b.group(1)
+            effective = f'20{s[:2]}-{s[2:4]}-{s[4:6]} {s[6:8]}:{s[8:10]} UTC'
         expires = ''
         m_c = re.search(r'C\)\s*:?\s*(\d{10})', b)
         if not m_c:
@@ -893,7 +928,7 @@ def _parse_icao_notams(text):
             'id': notam_id,
             'q_code': m_q.group(1) if m_q else '',
             'priority': '5',
-            'effective': '',
+            'effective': effective,
             'expires': expires,
             'desc': desc,
             'expired': check_notam_expired(expires, notam_id),
@@ -1191,10 +1226,10 @@ def get_notams(icao, force=False):
     if online_ok:
         save_notam_cache(icao, active)
 
-    result = {'active': [], 'med': [], 'gnd_check': [], 'check_time': [], 'low': []}
+    result = {'active': [], 'med': [], 'gnd_check': [], 'low': [], 'folded': []}
     for n in active:
         cat = classify_notam(n)
-        result[{'MED': 'med', 'GND CHECK': 'gnd_check', 'CHECK TIME': 'check_time', 'LOW': 'low'}[cat]].append(n)
+        result[{'MED': 'med', 'GND CHECK': 'gnd_check', 'LOW': 'low'}[cat]].append(n)
         result['active'].append(n)
 
     # Warnings
@@ -1396,7 +1431,7 @@ def build_brief(params):
         for key, icao in (('dep_notam', dep), ('arr_notam', arr)):
             ml = [n for n in manual_notams.get(icao, [])
                   if not n['expired'] and not n.get('not_yet_effective')]
-            base_nd = result.get(key) or {'active': [], 'med': [], 'gnd_check': [], 'check_time': [], 'low': []}
+            base_nd = result.get(key) or {'active': [], 'med': [], 'gnd_check': [], 'low': [], 'folded': []}
             # JEP Pro export is the complete airport set → replace entirely
             ml_is_jep = bool(ml) and all(n.get('jep') for n in ml)
             if notam_mode == 'manual':
@@ -1406,7 +1441,7 @@ def build_brief(params):
                                              if ml_is_jep else f'手动粘贴{len(ml)}条(仅以粘贴为准)')
                 else:
                     nd = {
-                        'active': [], 'med': [], 'gnd_check': [], 'check_time': [], 'low': [],
+                        'active': [], 'med': [], 'gnd_check': [], 'low': [], 'folded': [],
                         'source_warning': '手动模式：未粘贴有效NOTAM，请展开粘贴框粘贴JEP Pro通告'}
             else:
                 if ml:
