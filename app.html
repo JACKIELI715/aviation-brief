@@ -783,7 +783,7 @@ function notamTimeToMs(s, isEnd, offsetMs) {
 function notamOverlapsFlight(notam, fw) {
   if (!fw) return true;
   const off = notamSeriesOffsetMs(notam.id);
-  const s = notamTimeToMs(notam.effective, false, off);
+  const s = notamTimeToMs(notam.effective || notam.eff_from, false, off);
   const e = notamTimeToMs(notam.expires, true, off);
   const start = s == null ? -Infinity : s;
   const end = e == null ? Infinity : e;
@@ -1738,20 +1738,31 @@ function renderResult(data) {
   el.innerHTML = html;
 }
 
-function formatExpiry(n) {
-  const expires = (n && typeof n === 'object') ? n.expires : n;
-  if (!expires) return '';
-  const s = String(expires).toUpperCase();
+// 单个时间点 → 北京时间文本 (C/K 系列本身即 BJT; A/E/... 系列为 UTC)
+function formatNotamTime(val, isEnd, id) {
+  if (!val) return '';
+  const s = String(val).toUpperCase();
   if (s.includes('UFN') || s.includes('UNTIL FURTHER') || s.includes('PERM') || s.includes('永久')) return '永久有效';
-  // 失效时间换算为北京时间展示 (C/K 系列本身即 BJT; A/E/... 系列为 UTC)
-  const id = (n && typeof n === 'object') ? n.id : null;
-  const ms = notamTimeToMs(expires, true, notamSeriesOffsetMs(id));
+  const ms = notamTimeToMs(val, isEnd, notamSeriesOffsetMs(id));
   if (ms == null || ms === Infinity || ms === -Infinity) {
-    return expires.length > 24 ? expires.substring(0, 24) + '…' : expires;
+    return String(val).length > 24 ? String(val).substring(0, 24) + '…' : String(val);
   }
   const bj = new Date(ms + 8 * 3600000);
   const p = x => String(x).padStart(2, '0');
-  return `至 ${bj.getUTCFullYear()}-${p(bj.getUTCMonth() + 1)}-${p(bj.getUTCDate())} ${p(bj.getUTCHours())}${p(bj.getUTCMinutes())}BJT`;
+  return `${bj.getUTCFullYear()}-${p(bj.getUTCMonth() + 1)}-${p(bj.getUTCDate())} ${p(bj.getUTCHours())}${p(bj.getUTCMinutes())}BJT`;
+}
+
+// 通告有效期: 生效 ~ 失效 (与"结束"同格式展示，便于比对航班时段)
+function formatValidity(n) {
+  const o = (n && typeof n === 'object') ? n : null;
+  const id = o ? o.id : null;
+  const eff = formatNotamTime(o ? (o.effective || o.eff_from) : null, false, id);
+  const exp = formatNotamTime(o ? o.expires : n, true, id);
+  if (exp === '永久有效' && (!eff || eff === '永久有效')) return '永久有效';
+  if (eff && exp) return `${eff} 至 ${exp}`;
+  if (exp) return `至 ${exp}`;
+  if (eff) return `自 ${eff}`;
+  return '';
 }
 
 function renderNotamSection(notamData, icao, name) {
@@ -1766,13 +1777,13 @@ function renderNotamSection(notamData, icao, name) {
     return h;
   }
   for (const n of (notamData.med || [])) {
-    h += `<div class="section-line risk-med">${tagHtml('MED')}${escapeHtml(n.id)} | ${escapeHtml(summarizeMed(n.desc))}${formatExpiry(n) ? ' | ' + escapeHtml(formatExpiry(n)) : ''}</div>`;
+    h += `<div class="section-line risk-med">${tagHtml('MED')}${escapeHtml(n.id)} | ${escapeHtml(summarizeMed(n.desc))}${formatValidity(n) ? ' | ' + escapeHtml(formatValidity(n)) : ''}</div>`;
   }
   for (const n of (notamData.gnd_check || [])) {
-    h += `<div class="section-line risk-gnd">${tagHtml('GND CHECK')}${escapeHtml(n.id)} | ${escapeHtml(summarizeGnd(n.desc))}${formatExpiry(n) ? ' | ' + escapeHtml(formatExpiry(n)) : ''}</div>`;
+    h += `<div class="section-line risk-gnd">${tagHtml('GND CHECK')}${escapeHtml(n.id)} | ${escapeHtml(summarizeGnd(n.desc))}${formatValidity(n) ? ' | ' + escapeHtml(formatValidity(n)) : ''}</div>`;
   }
   for (const n of (notamData.low || [])) {
-    h += `<div class="section-line risk-low">${tagHtml('LOW')}${escapeHtml(n.id)} | ${escapeHtml(summarizeLow(n.desc))}${formatExpiry(n) ? ' | ' + escapeHtml(formatExpiry(n)) : ''}</div>`;
+    h += `<div class="section-line risk-low">${tagHtml('LOW')}${escapeHtml(n.id)} | ${escapeHtml(summarizeLow(n.desc))}${formatValidity(n) ? ' | ' + escapeHtml(formatValidity(n)) : ''}</div>`;
   }
   // ── 时间无关通告: 不在本次航班时段(起飞前1h~落地后3h)内生效 → 默认折叠 ──
   const folded = notamData.folded || [];
@@ -1781,7 +1792,7 @@ function renderNotamSection(notamData, icao, name) {
     for (const n of folded) {
       const cat = n.cat || 'LOW';
       const sum = cat === 'MED' ? summarizeMed(n.desc) : (cat === 'GND CHECK' ? summarizeGnd(n.desc) : summarizeLow(n.desc));
-      h += `<div class="section-line risk-low">${tagHtml(cat)}${escapeHtml(n.id)} | ${escapeHtml(sum)}${formatExpiry(n) ? ' | ' + escapeHtml(formatExpiry(n)) : ''}</div>`;
+      h += `<div class="section-line risk-low">${tagHtml(cat)}${escapeHtml(n.id)} | ${escapeHtml(sum)}${formatValidity(n) ? ' | ' + escapeHtml(formatValidity(n)) : ''}</div>`;
     }
     h += `</details>`;
   }

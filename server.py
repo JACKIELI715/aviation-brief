@@ -618,7 +618,7 @@ def notam_overlaps_flight(notam, fw_start, fw_end):
     if fw_start is None or fw_end is None:
         return True
     off = notam_series_offset(notam.get('id'))
-    s = _notam_time_to_dt(notam.get('effective'), False, off)
+    s = _notam_time_to_dt(notam.get('effective') or notam.get('eff_from'), False, off)
     e = _notam_time_to_dt(notam.get('expires'), True, off)
     start = s if s is not None else datetime.min.replace(tzinfo=timezone.utc)
     end = e if e is not None else datetime.max.replace(tzinfo=timezone.utc)
@@ -1094,7 +1094,7 @@ def fetch_notams_faa(icao):
             nid = mid.group(1) if mid else ''
         out.append({
             'id': nid, 'q_code': q_code, 'priority': '5',
-            'eff_from': eff, 'expires': exp, 'desc': desc,
+            'effective': eff, 'expires': exp, 'desc': desc,
             'expired': check_notam_expired(exp, nid) if exp else False,
         })
     return out
