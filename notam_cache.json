@@ -1,0 +1,2105 @@
+{
+  "ZGGG": {
+    "fetched_at": "2026-10-15 14:17 UTC",
+    "notams": [
+      {
+        "id": "G2328/26",
+        "q_code": "QNMAS",
+        "priority": "5",
+        "eff_from": "Jun 12, 2026 07:17 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "LONGMEN VOR/DME 'LMN' 116.3MHZ/CH110X U/S DUE TO MAINT.",
+        "expired": false
+      },
+      {
+        "id": "G3022/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Jul 13, 2026 00:00 UTC",
+        "expires": "Jan 13, 2027 15:59 UTC",
+        "desc": "ADD NEW TEMPO OBSTACLES WITHIN A CIRCLE WITH A RADIUS OF 15KM (OF ARP): OBST ID/DESIGNATION TYPE POSITION MAG BRG(DEGREE)/DIST(M) ELEVATION(M) MARKING/LIGHTING TYPE & COLOUR FLIGHT PROCEDURE/TAKE-OFF PATH AREA AFFECTED & REMARKS CRANE CRANE 319/5,800 69.6 LGT PENETRATE RWY01L/19R,RWY01R/19L INNER HORIZONTAL SURFACE, CRANE CRANE 320/5,733 80.6 LGT PENETRATE RWY01L/19R,RWY01R/19L INNER HORIZONTAL SURFACE",
+        "expired": false
+      },
+      {
+        "id": "G3169/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Jul 17, 2026 00:00 UTC",
+        "expires": "Jan 13, 2027 15:59 UTC",
+        "desc": "ADD NEW TEMPO OBSTACLES WITHIN A CIRCLE WITH A RADIUS OF 15KM (CENTERED ON THE ARP) OBSTACLE ID/DESIGNATION TYPE POSITION MAG BRG(DEGREE)/DIST(M) ELEVATION(M) MARKING/LIGHTING TYPE& COLOURFLIGHT PROCEDURE/TAKE-OFF PATH AREA AFFECTED& REMARKS CRANE CRANE 251/4,954 73.9 LGT - CRANE CRANE 251/4,971 69.2 LGT -",
+        "expired": false
+      },
+      {
+        "id": "G3200/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Jul 17, 2026 07:18 UTC",
+        "expires": "Oct 16, 2026 15:59 UTC",
+        "desc": "TWY Q11 CLSD BTN TWY Q AND TWY Q15.",
+        "expired": false
+      },
+      {
+        "id": "G3201/26",
+        "q_code": "QMXLT",
+        "priority": "5",
+        "eff_from": "Jul 17, 2026 07:19 UTC",
+        "expires": "Oct 16, 2026 15:59 UTC",
+        "desc": "DUE TO OPERATIONAL REQUIREMENTS, TWY B EASTBOUND, TURN RIGHT TO TWY T1 ONLY AVBL FOR ACFT WITH WINGSPAN NOT MORE THAN 36M(ACFT TYPE C AND BELOW).",
+        "expired": false
+      },
+      {
+        "id": "G3050/26",
+        "q_code": "QMPLC",
+        "priority": "5",
+        "eff_from": "Jul 19, 2026 07:01 UTC",
+        "expires": "Oct 28, 2026 15:59 UTC",
+        "desc": "PARKING STAND FX09 CLSD.DUE TO MAINT.",
+        "expired": false
+      },
+      {
+        "id": "G3444/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Jul 29, 2026 05:56 UTC",
+        "expires": "Oct 29, 2026 15:59 UTC",
+        "desc": "ADD NEW TEMPO OBSTACLES WITHIN A CIRCLE WITH A RADIUS OF 15KM (CENTERED ON THE ARP): OBSTACLE ID/DESIGNATION TYPE POSITION MAG BRG(DEGREE)/DIST(M) ELEVATION(M) MARKING/LIGHTING TYPE& COLOURFLIGHT PROCEDURE/TAKE-OFF PATH AREA AFFECTED& REMARKS CRANE CRANE 205/6,050 70.9 LGT - CRANE CRANE 203/5,943 64.9 LGT -",
+        "expired": false
+      },
+      {
+        "id": "G3871/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Aug 28, 2026 03:44 UTC",
+        "expires": "Dec 02, 2026 15:59 UTC",
+        "desc": "TWY S1 CLSD.",
+        "expired": false
+      },
+      {
+        "id": "G3872/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Sep 02, 2026 16:00 UTC",
+        "expires": "Dec 02, 2026 15:59 UTC",
+        "desc": "TWY J43 CLSD EAST OF TWY Q DUE TO WIP.",
+        "expired": false
+      },
+      {
+        "id": "G3873/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Sep 03, 2026 16:00 UTC",
+        "expires": "Dec 03, 2026 15:59 UTC",
+        "desc": "OBSTACLES WITHIN A CIRCLE WITH A RADIUS OF 15KM CENTERED ON THE ARP: OBSTACLE ID/DESIGNATION TYPE POSITION MAG BRG(DEGREE)/DIST(M) ELEVATION(M) MARKING/LIGHTING TYPE AND COLOUR FLIGHT PROCEDURE/TAKE-OFF PATH AREA AFFECTED & REMARKS A1 CRANE 211/7,768 112.39 LGT - A2 CRANE 211/7,681 100.59 LGT - B6 CRANE 210/7,948 100.74 LGT - B7 CRANE 210/7,988 118.54 LGT - 1 CRANE 209/8,090 116.94 LGT - 2 CRANE 210/8,124 122.4 LGT - 3 CRANE 210/8,026 107.42 LGT - 4 CRANE 210/8,065 100.64 LGT - REMARK:ALL CRANE AFFECT ONE ENGINE FAILURE PERFORMANCE FOR RWY19L,PLS CONDUCT PERFORMANCE EVALUATION.",
+        "expired": false
+      },
+      {
+        "id": "G3968/26",
+        "q_code": "QMPLC",
+        "priority": "5",
+        "eff_from": "Sep 03, 2026 22:00 UTC",
+        "expires": "Nov 03, 2026 15:59 UTC",
+        "desc": "PARKING STAND GY01,GY02,GY03,GY04,GY05 CLSD DUE TO WIP.",
+        "expired": false
+      },
+      {
+        "id": "G4122/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Sep 11, 2026 02:16 UTC",
+        "expires": "Dec 10, 2026 15:59 UTC",
+        "desc": "ADD NEW TEMPO OBSTACLES WITHIN A CIRCLE WITH A RADIUS OF 15KM (OF ARP): OBST ID/DESIGNATION TYPE POSITION MAG BRG(DEGREE)/DIST(M) ELEVATION(M) MARKING/LIGHTING TYPE & COLOUR FLIGHT PROCEDURE/TAKE-OFF PATH AREA AFFECTED & REMARKS CRANE 1 CRANE 006/4,907 72.4 LGT - CRANE 2 CRANE 007/4,912 78.1 LGT -",
+        "expired": false
+      },
+      {
+        "id": "G4236/26",
+        "q_code": "QMPLC",
+        "priority": "5",
+        "eff_from": "Sep 18, 2026 07:18 UTC",
+        "expires": "Oct 28, 2026 15:59 UTC",
+        "desc": "PRKG STAND GY07,GY08,GY09,GY10 CLSD DUE TO WIP.",
+        "expired": false
+      },
+      {
+        "id": "G4237/26",
+        "q_code": "QPDAU",
+        "priority": "5",
+        "eff_from": "Sep 18, 2026 07:25 UTC",
+        "expires": "Dec 17, 2026 15:59 UTC",
+        "desc": "DUE TO PINGZHOU VOR/DME 'POU' U/S,FLW SID PROCEDURE U/S: 1.SID RWY01L/01R(ZGGG-3V-5):SAREX-1. 2.SID RWY01L/01R(ZGGG-3V-7):VIBOS-1.",
+        "expired": false
+      },
+      {
+        "id": "G4362/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Sep 29, 2026 03:20 UTC",
+        "expires": "Dec 22, 2026 15:59 UTC",
+        "desc": "OBSTACLES WITHIN A CIRCLE WITH A RADIUS OF 15KM CENTERED ON THE ARP: OBSTACLE ID/DESIGNATION TYPE POSITION MAG BRG(DEGREE)/DIST(M) ELEVATION(M) MARKING/LIGHTING TYPE AND COLOUR 01 CRANE 223/6,150 66.4 LGT - 02 CRANE 223/6,081 73.9 LGT - 03 CRANE 222/6,050 66.8 LGT - 04 CRANE 222/6,168 75.1 LGT - REMARK: CRANE NR.01-04 AFFECT ONE ENGINE FAILURE PERFORMANCE FOR RWY19L/19R,PLS CONDUCT PERFORMANCE EVALUATION.",
+        "expired": false
+      },
+      {
+        "id": "G4376/26",
+        "q_code": "QMPXX",
+        "priority": "5",
+        "eff_from": "Sep 29, 2026 08:39 UTC",
+        "expires": "Dec 30, 2026 15:59 UTC",
+        "desc": "REF AIP AD2.20 USE OF APRONS AND PARKING STANDS ITEM 3.2 CHANGED AS FLW: ACFT SHALL BE GUIDED BY FOLLOW-ME VEHICLE TO ENTER INTO THE WHOLE STANDS, CHINA SOUTHERN AIRLINES AND CHONGQING AIRLINES NOT NEED TO FOLLOW THE FOLLOW-ME VEHICLE TO ENTER INTO THE PARKING STANDS NR.101-133,134L,134-137,144-149,149L,149R,201-235,236,238,238L,238R , 240,240L,240R,251-254,254L,254R,255,255L,255R,301-308,329,330,401-4 19, 401L,401R,402L,402R,403L,403R,404L,404R,405L,405R,406L,406R,GY01-GY 05.",
+        "expired": false
+      },
+      {
+        "id": "G4390/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Sep 30, 2026 07:43 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "TWY N CLSD BTN TWY T12 AND TWY T13,DUE TO OPERATION REQUIREMENT.",
+        "expired": false
+      },
+      {
+        "id": "G4472/26",
+        "q_code": "QFDCS",
+        "priority": "5",
+        "eff_from": "Oct 10, 2026 01:38 UTC",
+        "expires": "Oct 28, 2026 15:59 UTC",
+        "desc": "ADD NEW VISUAL DOCKING GUIDANCE SYSTEM FOR PARKING STAND NR. 815,816,816L,816R,818,819,819L,819R,821,822,822L,822R,824-838, 910-914,916,916L,916R,917,919,919L,919R,920,922,922L,922R,923-939.",
+        "expired": false
+      },
+      {
+        "id": "G4473/26",
+        "q_code": "QMXLT",
+        "priority": "5",
+        "eff_from": "Oct 10, 2026 01:41 UTC",
+        "expires": "Oct 28, 2026 15:59 UTC",
+        "desc": "AD ADD LIMITATION AS FLW,DUE TO WIP: 1.WHEN TAXI IN TWY E,ACFT ARE FORBIDDEN TO TURN LEFT TO TWY J1. 2.WHEN TAXI IN TWY J1,ACFT ARE FORBIDDEN TO TURN RIGHT TO TWY E.",
+        "expired": false
+      },
+      {
+        "id": "G4581/26",
+        "q_code": "QFAHX",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 02:40 UTC",
+        "expires": "Oct 18, 2026 15:59 UTC",
+        "desc": "ACTIVITIES OF BIRD FLOCKS AND MIGRATION WILL TAKE PLACE AROUND AD: 1. SEASONAL MIGRATORY BIRD THROUGH AD AND ADJACENT AIRSPACE. MIGRATION ROUTE:FROM NORTH TO SOUTH MIGRATION TIME:ALL DAY BIRD MIGRATION IS RELATIVELY HIGH DURING 1000-2300 AT ALT OF 300M-4,500M BIRD STRIKE ARE MORE LIKELY TO OCCUR DURING THE FLIGHT PHASE AT DISTANCE OF 10KM-35KM RWY THR AND ALT OF 600M-1,800M. ACFT ADVISE TO USE CONTINUOUS DESCENT OPERATION AND CONTINUOUS CLIMB OPERATION. 2. SPORADIC BIRD ACTIVITY: 2.1 TIME:2200-1030(NEXT DAY) ALT: 0M-100M. SOME BIRDS ARE ACTIVE ALT OF 60M-200M PRIOR TO LANDING ON RWY02R/20L/03/21/01L/19R. 2.2 TIME:1030-2200 ALT:0-200M AERODROME AUTHORITY RESORTS TO DISPERSAL METHODS TO REDUCE BIRD ACTIVITIES. EXERCISE CAUTION WHILE LANDING AND TAKE-OFF.",
+        "expired": false
+      },
+      {
+        "id": "G4543/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 17:30 UTC",
+        "expires": "Oct 15, 2026 23:30 UTC",
+        "desc": "FLW TWY CLSD DUE TO MAINT: 1. TWY T63 BTN TWY W AND PARKING STAND NR.972R. 2. TWY U BTN TWY L37 AND TWY T64.",
+        "expired": false
+      },
+      {
+        "id": "G4588/26",
+        "q_code": "QICCT",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 21:00 UTC",
+        "expires": "Oct 15, 2026 23:59 UTC",
+        "desc": "RWY20L ILS U/S DUE TO FLTCK.",
+        "expired": false
+      },
+      {
+        "id": "G4589/26",
+        "q_code": "QIDCT",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 21:00 UTC",
+        "expires": "Oct 15, 2026 23:59 UTC",
+        "desc": "RWY20L DME 'IXL' CH56X U/S DUE TO FLTCK.",
+        "expired": false
+      },
+      {
+        "id": "G4592/26",
+        "q_code": "QIDCT",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 21:00 UTC",
+        "expires": "Oct 15, 2026 23:59 UTC",
+        "desc": "RWY02R DME 'IDM' CH22X U/S DUE TO FLTCK.",
+        "expired": false
+      },
+      {
+        "id": "G4591/26",
+        "q_code": "QIICT",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 21:00 UTC",
+        "expires": "Oct 15, 2026 23:59 UTC",
+        "desc": "RWY20L IM U/S DUE TO FLTCK.",
+        "expired": false
+      },
+      {
+        "id": "G4590/26",
+        "q_code": "QICCT",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 21:00 UTC",
+        "expires": "Oct 15, 2026 23:59 UTC",
+        "desc": "RWY02R ILS U/S DUE TO FLTCK.",
+        "expired": false
+      },
+      {
+        "id": "G4593/26",
+        "q_code": "QIICT",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 21:00 UTC",
+        "expires": "Oct 15, 2026 23:59 UTC",
+        "desc": "RWY02R IM U/S DUE TO FLTCK.",
+        "expired": false
+      },
+      {
+        "id": "G4583/26",
+        "q_code": "QFTAS",
+        "priority": "5",
+        "eff_from": "Oct 19, 2026 01:00 UTC",
+        "expires": "Oct 19, 2026 09:00 UTC",
+        "desc": "1.RWY01R/19L MID RVR EQPT B U/S DUE TO MAINT. 2.RWY19L RVR EQPT C U/S DUE TO MAINT.",
+        "expired": false
+      },
+      {
+        "id": "G4585/26",
+        "q_code": "QMPLC",
+        "priority": "5",
+        "eff_from": "Oct 26, 2026 16:01 UTC",
+        "expires": "Nov 10, 2026 04:00 UTC",
+        "desc": "PARKING STAND YT03,YT05-YT08,YT10-YT14,YL01-YL08 CLSD ON FBO APRON.",
+        "expired": false
+      },
+      {
+        "id": "G4584/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 26, 2026 16:01 UTC",
+        "expires": "Nov 10, 2026 04:00 UTC",
+        "desc": "TWY GT1 AND GT2 CLSD ON FBO APRON",
+        "expired": false
+      }
+    ]
+  },
+  "WMKK": {
+    "fetched_at": "2026-10-15 14:17 UTC",
+    "notams": [
+      {
+        "id": "A2976/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Aug 03, 2026 00:00 UTC",
+        "expires": "Nov 01, 2026 00:00 UTC",
+        "desc": "CRANE ERECTED WITH MAX HGT FM GND 35M/144.82FT LCA AT COORD 1. 024419N1014057E 2. 024424N1014104E 3. 024425N1014103E 4. 024420N1014056E ( ACFT STAND K14,K16,K18,K20 )",
+        "expired": false
+      },
+      {
+        "id": "A2883/26",
+        "q_code": "QWULW",
+        "priority": "5",
+        "eff_from": "Aug 03, 2026 01:00 UTC",
+        "expires": "Oct 30, 2026 09:00 UTC",
+        "desc": "UA ACT WILL TAKE PLACE WI THE FLW COORD: 025356.00N 1013846.00E - 025356.00N 1013858.00E - 025352.00N 1013558.00E - 025351.00N 1013844.00E (CYBERJAYA,DENGKIL,SEPAN",
+        "expired": false
+      },
+      {
+        "id": "A3004/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Aug 03, 2026 11:50 UTC",
+        "expires": "Nov 01, 2026 10:00 UTC",
+        "desc": "CRANE ERECTED WITH MAX HGT FM GND 33M/108.26FT LCA AT COORD: 1. 024357N 1014111E 2. 024403N 1014120E 3. 024352N 1014115E 4. 024358N 1014124E",
+        "expired": false
+      },
+      {
+        "id": "A3058/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Aug 08, 2026 02:00 UTC",
+        "expires": "Nov 01, 2026 00:00 UTC",
+        "desc": "CRANE ERECTED WITH THE MAX HGT FM GND 33M/108.26FT AT COORD 1. 024336N1014220E 2. 024333N1014218E",
+        "expired": false
+      },
+      {
+        "id": "A3277/26",
+        "q_code": "QICAS",
+        "priority": "5",
+        "eff_from": "Aug 24, 2026 01:30 UTC",
+        "expires": "Oct 30, 2026 23:59 UTC",
+        "desc": "ILS GP RWY 32L OUT OF SERVICE",
+        "expired": false
+      },
+      {
+        "id": "A3705/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Sep 23, 2026 15:30 UTC",
+        "expires": "Dec 22, 2026 23:59 UTC",
+        "desc": "TWY L FM ACFT STAND F32 TIL ACFT STAND F34 CLSD",
+        "expired": false
+      },
+      {
+        "id": "A4011/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 12, 2026 10:00 UTC",
+        "expires": "Oct 31, 2026 10:00 UTC",
+        "desc": "TWY E BTN TWY K AND INT E1 CLSD.",
+        "expired": false
+      },
+      {
+        "id": "A4059/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 02:00 UTC",
+        "expires": "Oct 16, 2026 10:00 UTC",
+        "desc": "TWY M BTN ACFT STAND M2 AND INT E2 CLSD",
+        "expired": false
+      },
+      {
+        "id": "A4069/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 16, 2026 15:30 UTC",
+        "expires": "Oct 16, 2026 22:00 UTC",
+        "desc": "INT C3 AND P3 CLSD.",
+        "expired": false
+      },
+      {
+        "id": "A4070/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 16, 2026 15:30 UTC",
+        "expires": "Oct 16, 2026 22:00 UTC",
+        "desc": "INT C4 AND P4 CLSD",
+        "expired": false
+      },
+      {
+        "id": "A4071/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 16, 2026 16:00 UTC",
+        "expires": "Oct 16, 2026 21:00 UTC",
+        "desc": "TWY C BTN INT C7 AND C10 CLSD",
+        "expired": false
+      },
+      {
+        "id": "A3962/26",
+        "q_code": "QCTAS",
+        "priority": "5",
+        "eff_from": "Oct 21, 2026 01:00 UTC",
+        "expires": "Oct 21, 2026 09:00 UTC",
+        "desc": "KL INTERNATIONAL / SEPANG TERMNAL APPROACH RADAR WITHDRAWN FOR MAINT",
+        "expired": false
+      },
+      {
+        "id": "A3318/26",
+        "q_code": "QFATT",
+        "priority": "5",
+        "eff_from": "Oct 29, 2026 00:00 UTC",
+        "expires": "Nov 11, 2026 23:59 UTC",
+        "desc": "TRIGGER NOTAM - PERM AIP AIRAC AMDT 04/26 WEF 29 OCT 2026 INCLUDED IN THIS AMENDMENT IS THE UPDATED RNP Y RWY 32L IAC AT WMKK.",
+        "expired": false
+      },
+      {
+        "id": "A3319/26",
+        "q_code": "QFATT",
+        "priority": "5",
+        "eff_from": "Oct 29, 2026 00:00 UTC",
+        "expires": "Nov 11, 2026 23:59 UTC",
+        "desc": "TRIGGER NOTAM - PERM AIP AIRAC AMDT 04/26 WEF 29 OCT 2026 INCLUDED IN THIS AMENDMENT ARE CHANGES TO WMKP AD 2.10, AD 2.12, AD 2.15 AND AD 2-WMKP ADC, APDC AND GMC",
+        "expired": false
+      },
+      {
+        "id": "A3668/26",
+        "q_code": "QCATT",
+        "priority": "5",
+        "eff_from": "Oct 29, 2026 00:00 UTC",
+        "expires": "Nov 11, 2026 23:59 UTC",
+        "desc": "TRIGGER NOTAM - AIRAC AIP SUP 46/26 WEF 29 OCT 2026 TO 30 JUL 2027, CONSTRUCTION OF NEW HANGAR AND ASSOCIATED WORKS FOR ASIA DIGITAL ENGINEERING - WORK SCHEDULE AND MOVEMENT AREAS RESTRICTIONS",
+        "expired": false
+      },
+      {
+        "id": "A3747/26",
+        "q_code": "QWELW",
+        "priority": "5",
+        "eff_from": "Oct 29, 2026 01:00 UTC",
+        "expires": "Oct 30, 2026 04:00 UTC",
+        "desc": "FLT CLBR WILL TAKE PLACE WI 20NM RADIUS CENTERED ON 024436N1014153E ( ARP ) RMK/ DEP AND ARR ACFT SUBJ TO ATC AND EXPECT DLA",
+        "expired": false
+      },
+      {
+        "id": "A3748/26",
+        "q_code": "QICCT",
+        "priority": "5",
+        "eff_from": "Oct 29, 2026 01:00 UTC",
+        "expires": "Oct 29, 2026 04:00 UTC",
+        "desc": "ILS RWY 32L ON TEST. DO NOT USE. FALSE INDICATION POSSIBLE.",
+        "expired": false
+      },
+      {
+        "id": "A3749/26",
+        "q_code": "QICCT",
+        "priority": "5",
+        "eff_from": "Oct 30, 2026 01:00 UTC",
+        "expires": "Oct 30, 2026 04:00 UTC",
+        "desc": "ILS RWY 15 ON TEST.DO NOT USE. FALSE INDICATION POSSIBLE.",
+        "expired": false
+      }
+    ]
+  },
+  "ZSPD": {
+    "fetched_at": "2026-10-15 14:17 UTC",
+    "notams": [
+      {
+        "id": "F8021/25",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Nov 15, 2025 16:00 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "ADD NEW TEMPO OBST WITHIN A CIRCLE WITH A RADIUS OF 15KM(CENTERED ON THE AP",
+        "expired": false
+      },
+      {
+        "id": "F2442/26",
+        "q_code": "QNMXX",
+        "priority": "5",
+        "eff_from": "Jun 22, 2026 05:06 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "LIUZAO VOR/DME 'PDL' 109.4MHZ/CH31X U/S BTN RADIAL 209DEG-213DEG CLOCKWISE.",
+        "expired": false
+      },
+      {
+        "id": "F2931/26",
+        "q_code": "QMPXX",
+        "priority": "5",
+        "eff_from": "Jul 24, 2026 16:00 UTC",
+        "expires": "Oct 28, 2026 15:59 UTC",
+        "desc": "FLW PARKING STAND CNL FOLLOW-ME VEHICLE (EXCEPT ACFT TYPE A380) WHEN ACFT TAXI IN:PARKING STAND NR.102-108,182-188.",
+        "expired": false
+      },
+      {
+        "id": "F3193/26",
+        "q_code": "QXXXX",
+        "priority": "5",
+        "eff_from": "Aug 06, 2026 07:37 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "IMPLEMENT THE LID(LANDING INFORMATION DELIVE",
+        "expired": false
+      },
+      {
+        "id": "F3220/26",
+        "q_code": "QXXXX",
+        "priority": "5",
+        "eff_from": "Aug 07, 2026 09:13 UTC",
+        "expires": "PERMANENT",
+        "desc": "PUDONG AIRPORT VISUAL APPROACH REGULAR OPERATION: 1. IMPLEMENTATION WEATHER CONDITIONS PREVAILING VISIBILITY : MORE THAN 5,000M,CEILING: 700M AND ABOVE. 2. INSTRUCTIONS FOR PILOTS 2.1 THE VISUAL APPROACH SHALL BE INITIATED BY EITHER PILOT OR ATC UPON MUTUAL APPROVAL. ATC WILL INFORM THE CREW OF THE EXPECTED VISUAL APPROACH WHEN ISSUING THE ARRIVAL METHOD, , THE PILOT MUST INFORM THE ATC IF CANNOT ACCEPT THE VISUAL APPROACH. 2.2 THE ATC MAY ISSUE VISUAL APPROACH INSTRUCTION AFTER PILOT REPORT THE LANDING RUNWAY OR THE PRECEDING AIRCRAFT IS IN SIGHT. 2.3 AFTER RECEIVING THE VISUAL APPROACH CLEARANCE,THE ALTITUDE AND HEADING SHALL BE AT THE PILOT'S OWN DISCRETION.FLYING TOWARD THE LANDING AIRPORT OR FOLLOW THE PRECEDING AIRCRAFT FOR VISUAL APPROACH, THE PILOT IS RESPONSIBLE FOR MAINTAINING SAFETY SEPARATION BETWEEN PRECEDING AIRCRAFT AND GROUND OBSTACLES. 2.4 PUDONG AIRPORT WILL BROADCAST THE VISUAL APPROACH INFORMATION ON THE ATIS. 3. TERMINATION OF VISUAL ) // // APPROACH 3.1 THE ATC WILL PROACTIVELY TERMINATE THE VISUAL APPROACH WHEN PILOT REPORTS THAT IT IS UNABLE TO CONTINUE AND COMPLETE THE VISUAL APPROACH DUE TO WEATHER CONDITIONS OR OTHER REASONS. 3.2 END PART 1 OF 2 F3220/26 NOTAMR F4370/25 Q) ZSHA/QXXXX/IV/NBO/AE/000/999/3109N12148E025 A) ZSPD PART 2 OF 2 B) 2608070913 C) PERM E) THE ATC WILL PROACTIVELY TERMINATE THE VISUAL APPROACH WHEN THE WEATHER CONDITIONS ARE BELOW THE METEOROLOGICAL STANDARDS FOR THE VISUAL APPROACH. 3.3 THE ATC WILL PROACTIVELY TERMINATE THE VISUAL APPROACH WHEN DISCOVERS SITUATION THAT MAY AFFECT FLIGHT SAFETY DURING THE VISUAL APPROACH. 3.4 WHEN THE AIRCRAFT IS UNABLE TO COMPLETE THE VISUAL APPROACH AND WILL CONVERT TO INSTRUMENT APPROACH OR TERMINATE THE APPROACH. THE ATC WILL PROVIDE NECESSARY ASSISTANCE AND ALLOCATE THE REQUIRED SEPARATION. 3.5 AFTER TERMINATING THE VISUAL APPROACH, THE ATC WILL ISSUE HEADING OR ALTITUDE INSTRUCTIONS TO THE AIRCRAFT TO ESTABLISH THE SAFE SEPARATION AS SOON AS POSSIBLE. 4. WHEN VISUAL SEPARATION IS APPLIED DURING THE FINAL APPROACH,THE PILOT SHALL KEEP VISUAL OBSERVATION AND MAINTAIN SAFE SEPARATION FROM OTHER AIRCRAFT. ) // // END PART 2 OF 2",
+        "expired": false
+      },
+      {
+        "id": "F3286/26",
+        "q_code": "QMXLT",
+        "priority": "5",
+        "eff_from": "Aug 12, 2026 09:26 UTC",
+        "expires": "Nov 25, 2026 15:59 UTC",
+        "desc": "TWY T5(BTN TWY S1 AND TWY S2) ONLY AVBL FOR ACFT WITH WINGSPAN LESS THAN 36M.",
+        "expired": false
+      },
+      {
+        "id": "F3458/26",
+        "q_code": "QPDXX",
+        "priority": "5",
+        "eff_from": "Sep 02, 2026 16:00 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "REF AIP ZSPD-3V-3 HSN-E,HSN-F :SEGMENT PONAB-HSN REF AIP ZSPD-3V-6 HSN-J,HSN-K :SEGMENT PONAB-HSN ACFT SHALL FOLLOW RADAR VECTORING.FLIGHT CREW SHALL EXERCISE CAUTION.",
+        "expired": false
+      },
+      {
+        "id": "F3772/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Sep 16, 2026 22:31 UTC",
+        "expires": "Nov 01, 2026 22:30 UTC",
+        "desc": "TWY R6 CLSD BTN TWY F AND RWY16R/34L.",
+        "expired": false
+      },
+      {
+        "id": "F3945/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Sep 24, 2026 10:04 UTC",
+        "expires": "Apr 30, 2027 15:59 UTC",
+        "desc": "ADD NEW OBSTACLE WITHIN A CIRCLE WITH A RADIUS OF 15KM (CENTERED ON THE ARP): OBSTACLE ID/DESIGNATION TYPE POSITION MAG BRG(DEGREE)/DIST(M) ELEVATION(M) MARKING/LIGHTING TYPE AND COLOUR FLIGHT PROCEDURE/TAKE-OFF PATH AREA AFFECTED&REMARKS 1 CRANE CRANE 156/3,984 58.4 RED LGT - 2 CRANE CRANE 155/4,003 58.4 RED LGT - 3 CRANE CRANE 157/4,013 58.4 RED LGT - 4 CRANE CRANE 156/4,019 58.4 RED LGT - 5 CRANE CRANE 156/4,021 58.4 RED LGT - 6 CRANE CRANE 155/4,033 58.4 RED LGT - 7 CRANE CRANE 157/4,058 58.4 RED LGT - 8 CRANE CRANE 156/4,063 58.4 RED LGT - 9 CRANE CRANE 157/4,086 58.4 RED LGT - 10 CRANE CRANE 156/4,104 58.4 RED LGT -",
+        "expired": false
+      },
+      {
+        "id": "F4020/26",
+        "q_code": "QFAHX",
+        "priority": "5",
+        "eff_from": "Sep 29, 2026 03:00 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "ACTIVITIES OF BIRD FLOCKS WILL TAKE PLACE AROUND AD: AREA 1: PRIMARY ACTIVITY AREA INCLUDE CHONGMING ISLAND(EASTERN OF AIRPORT) TO SEA OF CHANGXING ISLAND AND AREAS WI A 6KM RADIUS OF WETLAND,FARMLAND AND COASTAL REGION NORTH/SOUTH END OF AIRPORT. ALT: 0M-200M,MIGRATORY FLIGHT ALT 300M-3,000M AT NIGHT. TIME: DAY AND NIGHT. AREA 2: 8KM-15KM SOUTH OF RWY34R THR TO 7 KM EAST OF RWY16L/34R RCL. ALT: 30M-80M TIME: DAY AND NIGHT, AERODROME AUTHORITY RESORTS TO DISPERSAL METHODS TO REDUCE BIRD ACTIVITIES. EXERCISE CAUTION WHILE LANDING AND TAKE-OFF.",
+        "expired": false
+      },
+      {
+        "id": "F4332/26",
+        "q_code": "QICCT",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 17:00 UTC",
+        "expires": "Oct 15, 2026 23:30 UTC",
+        "desc": "RWY16L ILS ON TEST DO NOT USE DUE TO FLTCK.",
+        "expired": false
+      },
+      {
+        "id": "F4333/26",
+        "q_code": "QIDCT",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 17:00 UTC",
+        "expires": "Oct 15, 2026 23:30 UTC",
+        "desc": "DME 16L 'IHL' CH52X ON TEST DO NOT USE DUE TO FLTCK.",
+        "expired": false
+      },
+      {
+        "id": "F4314/26",
+        "q_code": "QMRLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 17:30 UTC",
+        "expires": "Oct 15, 2026 22:30 UTC",
+        "desc": "RWY17L/35R CLSD,ACFT SHALL CROSS RWY17L/35R VIA TWY P6,P4,P3,P2.",
+        "expired": false
+      },
+      {
+        "id": "F4315/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 17:30 UTC",
+        "expires": "Oct 15, 2026 22:30 UTC",
+        "desc": "FLW TWY CLSD: 1. TWY P1,P5 CLSD BTN TWY D AND TWY B. 2. TWY A BTN TWY B8 AND TWY P1.INTERSECTION CLSD BTN TWY P1 AND TWY A. ACFT SHALL CROSS TWY A VIA TWY P6,P4,P3,P2.",
+        "expired": false
+      },
+      {
+        "id": "F4334/26",
+        "q_code": "QICAS",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 17:30 UTC",
+        "expires": "Oct 15, 2026 22:30 UTC",
+        "desc": "RWY17L/35R ILS U/S.",
+        "expired": false
+      },
+      {
+        "id": "F4316/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 18:00 UTC",
+        "expires": "Oct 15, 2026 22:30 UTC",
+        "desc": "FLW TWY CLSD: 1.TWY R3 BTN TWY L24 AND TWY E,INTERSECTION CLSD BTN TWY L24 AND TWY R3. 2.TWY T2 BTN TWY B AND TWY E. 3.TWY L24 BTN TWY E1 AND TWY L19.",
+        "expired": false
+      },
+      {
+        "id": "F4317/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 16, 2026 02:00 UTC",
+        "expires": "Oct 16, 2026 09:00 UTC",
+        "desc": "FLW TWY CLSD: 1.TWY Q4 BTN TWY L15 AND TWY C,INTERSECTION CLSD BTN TWY L15 AND TWY Q4. 2.TWY L15 BTN PARKING STAND NR.322 AND NR.325.INTERSECTION CLSD BTN PARKING STAND NR.322 AND TWY L15,BTN PARKING STAND NR.325 AND TWY L15.",
+        "expired": false
+      },
+      {
+        "id": "F4329/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 16, 2026 17:30 UTC",
+        "expires": "Oct 16, 2026 22:30 UTC",
+        "desc": "FLW TWY CLSD: 1. TWY P1,P4 CLSD BTN TWY D AND TWY B. 2. TWY A BTN TWY B8 AND TWY P1.INTERSECTION CLSD BTN TWY P1 AND TWY A,ACFT SHALL CROSS TWY A VIA TWY P6,P5,P3,P2.",
+        "expired": false
+      },
+      {
+        "id": "F4328/26",
+        "q_code": "QMRLC",
+        "priority": "5",
+        "eff_from": "Oct 16, 2026 17:30 UTC",
+        "expires": "Oct 16, 2026 22:30 UTC",
+        "desc": "RWY17L/35R CLSD.ACFT SHALL CROSS RWY17L/35R VIA TWY P6,P5,P3,P2.",
+        "expired": false
+      },
+      {
+        "id": "F4330/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 16, 2026 18:00 UTC",
+        "expires": "Oct 16, 2026 22:30 UTC",
+        "desc": "FLW TWY CLSD: 1.TWY L22,ACFT SHALL CROSS TWY L22 VIA TWY W1,W6. 2.TWY L25,L25A,L26,L26A.",
+        "expired": false
+      },
+      {
+        "id": "F4331/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 17, 2026 02:00 UTC",
+        "expires": "Oct 17, 2026 09:00 UTC",
+        "desc": "TWY L15 BTN PARKING STAND NR.326 AND NR.328.INTERSECTION CLSD BTN PARKING STAND NR.326 AND TWY L15,BTN PARKING STAND NR.328 AND TWY L15.",
+        "expired": false
+      }
+    ]
+  },
+  "ZBAA": {
+    "fetched_at": "2026-10-15 14:17 UTC",
+    "notams": [
+      {
+        "id": "E4136/25",
+        "q_code": "QXXXX",
+        "priority": "5",
+        "eff_from": "Nov 30, 2025 16:00 UTC",
+        "expires": "PERMANENT",
+        "desc": "ADD NEW GROUND MAKRINGS: PATTERN A RWY HOLDING POSITION MARKING AND ENHANCED TWY CENTER LINE MARKING ON RWY18R/36L,RWY18L/36R AND RWY01/19 RAPID EXIT TAXIWAY(P2-P7,C2-C5,W3-W6,E3-E6,Q2-Q7). EXERCISE CAUTION WHILE TAXIING.",
+        "expired": false
+      },
+      {
+        "id": "E1286/26",
+        "q_code": "QMPXX",
+        "priority": "5",
+        "eff_from": "May 06, 2026 07:00 UTC",
+        "expires": "PERMANENT",
+        "desc": "PRKG STAND NR.504,NR.506 WITHDRAWN,PRKG STAND NR.503,NR.505 OPEN TO USE: PRKG STAND NR.503 AND NR.505 PCR 840/R/A/W/T. PRKG STAND NR.503 AND NR.505 WING SPAN LIMITS FOR ACFT:65M.",
+        "expired": false
+      },
+      {
+        "id": "E1601/26",
+        "q_code": "QPUCH",
+        "priority": "5",
+        "eff_from": "May 25, 2026 02:29 UTC",
+        "expires": "Nov 28, 2026 15:59 UTC",
+        "desc": "MISSED APPROACH CHANGED AS FLW: IAC RWY01: CLIMB STRAIGHT AHEAD TO AA497 AT 230M OR ABOVE, TURN RIGHT TO PEK AT 1,200M, JOIN THE HOLDING PATTERN, OR BY ATC.",
+        "expired": false
+      },
+      {
+        "id": "E2190/26",
+        "q_code": "QILXX",
+        "priority": "5",
+        "eff_from": "Jun 30, 2026 06:32 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "LOC 19 ILS U/S BEYOND 21.5NM OF FRONT COURSE.",
+        "expired": false
+      },
+      {
+        "id": "E2191/26",
+        "q_code": "QILXX",
+        "priority": "5",
+        "eff_from": "Jun 30, 2026 06:35 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "LOC 36R ILS LIMITATION: 1.U/S BEYOND 010DEG LEFTSIDE OF FRONT COURSE. 2.U/S BTN 17-28NM BEYOND LEFTSIDE 3.8DEG AND RIGHTSIDE 3.8DEG OF FRONT COURSE.",
+        "expired": false
+      },
+      {
+        "id": "E2192/26",
+        "q_code": "QILXX",
+        "priority": "5",
+        "eff_from": "Jun 30, 2026 06:38 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "LOC 18L LIMITATION:U/S BEYOND 21.5NM OF FRONT COURSE.",
+        "expired": false
+      },
+      {
+        "id": "E2193/26",
+        "q_code": "QIGXX",
+        "priority": "5",
+        "eff_from": "Jun 30, 2026 06:39 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "GP FOR RWY18L U/S BEYOND 004 DEG RIGHTSIDE.",
+        "expired": false
+      },
+      {
+        "id": "E2194/26",
+        "q_code": "QILXX",
+        "priority": "5",
+        "eff_from": "Jun 30, 2026 06:40 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "LOC 18R LIMITATION:U/S BEYOND 21NM OF FRONT COURSE.",
+        "expired": false
+      },
+      {
+        "id": "E2195/26",
+        "q_code": "QIGXX",
+        "priority": "5",
+        "eff_from": "Jun 30, 2026 06:42 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "GP FOR RWY18R U/S BEYOND 003 DEG RIGHTSIDE.",
+        "expired": false
+      },
+      {
+        "id": "E2196/26",
+        "q_code": "QILXX",
+        "priority": "5",
+        "eff_from": "Jun 30, 2026 06:44 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "RWY36L LOC LIMITATION: 1. U/S BEYOND 010DEG LEFTSIDE OF FRONT COURSE. 2. U/S BEYOND 034DEG RIGHTSIDE OF FRONT COURSE.",
+        "expired": false
+      },
+      {
+        "id": "E2197/26",
+        "q_code": "QIDLT",
+        "priority": "5",
+        "eff_from": "Jun 30, 2026 06:45 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "DME 36L 'IDK' CH54X LIMITATION: DME U/S BTN 11NM-12.5NM,BTN 19NM-22NM FOR ILS/DME APPROACH PROCEDURE.",
+        "expired": false
+      },
+      {
+        "id": "E2198/26",
+        "q_code": "QILXX",
+        "priority": "5",
+        "eff_from": "Jun 30, 2026 06:47 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "RWY01 LOC LIMITATION: 1. U/S BEYOND 015DEG LEFTSIDE OF FRONT COURSE. 2. U/S BEYOND 015DEG RIGHTSIDE OF FRONT COURSE. 3. U/S BTN 19-26NM BEYOND LEFTSIDE 004DEG AND RIGHTSIDE 004DEG OF FRONT COURSE.",
+        "expired": false
+      },
+      {
+        "id": "E2199/26",
+        "q_code": "QIDLT",
+        "priority": "5",
+        "eff_from": "Jun 30, 2026 06:49 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "DME 01 'INJ' CH22X LIMITED TO USE: DME U/S BTN 9NM-10NM ON RNAV CAT-I/II ILS/DME Z RWY01 (FROM 1200M (QNH)DESCEND TO 600M(QNH) CATCH THE GLIDE SIGNAL)",
+        "expired": false
+      },
+      {
+        "id": "V0302/26",
+        "q_code": "QPICH",
+        "priority": "5",
+        "eff_from": "Jun 30, 2026 16:00 UTC",
+        "expires": "Nov 28, 2026 15:59 UTC",
+        "desc": "[US DOD PROCEDURAL NOTAM] INSTRUMENT APPROACH PROCEDURE CHANGED RNAV CAT I ILS/DME Z RWY 01: TEMP MISSED APPROACH INSTRUCTIONS TO READ: CLIMB STRAIGHT AHEAD TO CROSS AA497 AT OR ABOVE 760, THEN CLIMBING RIGHT TURN TO PEK VOR/DME AT 3940 AND HOLD, OR AS DIRECTED BY ATC.",
+        "expired": false
+      },
+      {
+        "id": "E2636/26",
+        "q_code": "QFAHW",
+        "priority": "5",
+        "eff_from": "Jul 31, 2026 16:00 UTC",
+        "expires": "Jan 31, 2027 15:59 UTC",
+        "desc": "WIP WI FLW AREA WITH MARKINGS AND RED LGTS: 1. 1,412M-1,553M NORTH OF RWY19 THR, 15M-131M WEST OF OF RWY01/19 CL. 2. 155M-308M EAST OF PARKING STAND NR.954, 781M-855M NORTH OF PARKING STAND NR.934. 3. 206M-300M WEST OF PARKING STAND NR.956, 370M-600M NORTH OF PARKING STAND NR.936.",
+        "expired": false
+      },
+      {
+        "id": "E2935/26",
+        "q_code": "QFAHW",
+        "priority": "5",
+        "eff_from": "Aug 14, 2026 07:55 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "WIP WI FLW AREA: 1. 100M-120M WEST OF RWY18R/36L CL,320M-365M NORTH OF RWY36L THR. 2. 100M-120M WEST OF RWY18R/36L CL,1,630M-1,665M SOUTH OF RWY18R THR. 3. 100M-120M WEST OF RWY18R/36L CL,325M-350M SOUTH OF RWY18R THR. 4. 110M-125M WEST OF RWY18L/36R CL,320M-360M NORTH OF RWY36R THR. 5. 105M-120M WEST OF RWY18L/36R CL,1,800M-1,830M SOUTH OF RWY18L THR. 6. 105M-125M WEST OF RWY18L/36R CL,305M-330M SOUTH OF RWY18L THR. 7. 108M-120M EAST OF RWY01/19 CL,325M-370M NORTH OF RWY01 THR. 8. 108M-120M EAST OF RWY01/19 CL,1,765M-1,810M SOUTH OF RWY19 THR. 9. 108M-120M EAST OF RWY01/19 CL,300M-345M SOUTH OF RWY19 THR. EXERCISE CAUTION WITH THE CROSSING VEHICLES DURING THE CONSTRUCTION PERIOD.",
+        "expired": false
+      },
+      {
+        "id": "E3650/26",
+        "q_code": "QFAHW",
+        "priority": "5",
+        "eff_from": "Sep 23, 2026 16:00 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "WIP WI FLW AREA WITH MARKINGS, DUE TO NEW SMR PROJECT WIP: 1. 236M-260M NORTH OF TWY M CL(PARALLEL OF TWY M),142M-162M WEST OF TWY Z3 CL(PARALLEL OF TWY Z3). 2. 204M-246M NORTH OF TWY M CL(PARALLEL OF TWY M),309M-332M WEST OF TWY D4 CL(PARALLEL OF TWY D4). EXERCISE CAUTION WHILE LANDING AND TAKE-OFF.",
+        "expired": false
+      },
+      {
+        "id": "E3831/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Sep 30, 2026 16:00 UTC",
+        "expires": "Nov 30, 2026 15:59 UTC",
+        "desc": "ADD 4 OBST(CRANE) WITH LGTS WI FLW AREA: 1.23KM-1.37KM WEST OF RWY36L/18R CL,1.78KM-1.89KM SOUTH OF RWY36L THR. ALT:91M,85M,82M,82M.",
+        "expired": false
+      },
+      {
+        "id": "E3885/26",
+        "q_code": "QMPLT",
+        "priority": "5",
+        "eff_from": "Oct 01, 2026 09:00 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "PARKING STAND NR.509 WINGSPAN LIMITATION CHANGED TO 80M.",
+        "expired": false
+      },
+      {
+        "id": "E3940/26",
+        "q_code": "QFAHX",
+        "priority": "5",
+        "eff_from": "Oct 02, 2026 07:00 UTC",
+        "expires": "Nov 02, 2026 15:59 UTC",
+        "desc": "ACTIVITIES OF BIRD FLOCKS AND MIGRATION WILL TAKE PLACE AROUND AD TERMINAL AREA,INCREASE RISK OF BIRDS STRIKE: 1. MOVE AREA:NEARBY THE AIRWAY AA242,AA241,AA122 AND RWY01/19,RWY36L/18R,RWY36R/18L APCH PHASE. 2. HEIGHT: ABOUT 0M-3,000M. 3. QUANTITY:APPROXIMATELY 1-200. 4. MOVE FASTIGIUM TIME:MAINLY FOCUS ON 1200-1700,2030-2330 DLY. 5.MIGRATION ROUTE:FROM NORTH TO SOUTH. 6.AERODROME AUTHORITY RESORTS TO DISPERSAL METHODS TO REDUCE BIRD ACTIVITIES.EXERCISE CAUTION WHILE LANDING AND TAKE-OFF.",
+        "expired": false
+      },
+      {
+        "id": "E3930/26",
+        "q_code": "QMPLC",
+        "priority": "5",
+        "eff_from": "Oct 08, 2026 01:00 UTC",
+        "expires": "Feb 04, 2027 15:59 UTC",
+        "desc": "PARKING STAND NR.221 CLSD DUE TO WIP.",
+        "expired": false
+      },
+      {
+        "id": "E4045/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 11, 2026 15:00 UTC",
+        "expires": "Oct 17, 2026 23:00 UTC",
+        "desc": "TWY Y8 CLSD",
+        "expired": false
+      },
+      {
+        "id": "E4042/26",
+        "q_code": "QMRLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 16:00 UTC",
+        "expires": "Oct 15, 2026 20:00 UTC",
+        "desc": "RWY01/19 CLSD.",
+        "expired": false
+      },
+      {
+        "id": "E4063/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 16:00 UTC",
+        "expires": "Oct 15, 2026 22:00 UTC",
+        "desc": "TWY T6 CLSD BTN TWY H AND TWY J3.",
+        "expired": false
+      },
+      {
+        "id": "E4064/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 16:00 UTC",
+        "expires": "Oct 15, 2026 20:00 UTC",
+        "desc": "TWY K CLSD.",
+        "expired": false
+      },
+      {
+        "id": "E4065/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 17:00 UTC",
+        "expires": "Oct 15, 2026 22:00 UTC",
+        "desc": "FLW TWY CLSD: 1.TWY S7 CLSD BTN TWY F AND TWY Y7 . 2.TWY Y7 NORTH OF TWY S6.",
+        "expired": false
+      },
+      {
+        "id": "E4138/26",
+        "q_code": "QILCT",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 20:00 UTC",
+        "expires": "Oct 16, 2026 00:01 UTC",
+        "desc": "RWY18L ILS U/S DUE TO FLTCK.",
+        "expired": false
+      },
+      {
+        "id": "E4123/26",
+        "q_code": "QICAS",
+        "priority": "5",
+        "eff_from": "Oct 16, 2026 06:00 UTC",
+        "expires": "Oct 16, 2026 09:00 UTC",
+        "desc": "RWY18L ILS U/S DUE TO MAINT.",
+        "expired": false
+      },
+      {
+        "id": "E4066/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 16, 2026 15:00 UTC",
+        "expires": "Oct 16, 2026 23:00 UTC",
+        "desc": "TWY T4 CLSD BTN TWY Y1 AND TWY Y4.",
+        "expired": false
+      },
+      {
+        "id": "E4043/26",
+        "q_code": "QMRLC",
+        "priority": "5",
+        "eff_from": "Oct 16, 2026 17:00 UTC",
+        "expires": "Oct 16, 2026 20:00 UTC",
+        "desc": "RWY18L/36R CLSD.ACFT ARE FORBIDDEN TO CROSS RWY18L/36R VIA TWY A0,A1,A8,A9.",
+        "expired": false
+      }
+    ]
+  },
+  "ZSYW": {
+    "fetched_at": "2026-10-15 14:17 UTC",
+    "notams": [
+      {
+        "id": "M2639/26",
+        "q_code": "QFAHX",
+        "priority": "5",
+        "eff_from": "Sep 04, 2026 10:19 UTC",
+        "expires": "Nov 30, 2026 15:59 UTC",
+        "desc": "BIRD FLOCKS MIGRATION WILL TAKE PLACE AROUND AD. MIGRATION ROUTE:FROM NORTH TO SOUTH. HEIGHT:0M- 2,000M(INCLUSIVE). INCREASE RISK OF BIRD STRIKE,MOVE FASTIGIUM TIME: ALL DAY. BIRD STRIKES MAINLY OCCUR AT NIGHT. AERODROME AUTHORITY RESORTS TO DISPERSAL METHODS TO REDUCE BIRD ACTIVITIES. EXERCISE CAUTION WHILE TAKE-OFF,APPROACH AND LANDING.",
+        "expired": false
+      }
+    ]
+  },
+  "ZGSZ": {
+    "fetched_at": "2026-10-15 14:17 UTC",
+    "notams": [
+      {
+        "id": "G1655/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "May 06, 2026 16:00 UTC",
+        "expires": "Nov 02, 2026 15:59 UTC",
+        "desc": "ADD TEMPO MOVING OBSTACLE MARKED WITH LGTS WI FLW AREA: N222836.6E1135421.2-N222838.4E1135423.6- N222834.4E1135423.1-N222836.1E1135425.5- N222836.6E1135421.2 ALT:399M.",
+        "expired": false
+      },
+      {
+        "id": "G1657/26",
+        "q_code": "QPICH",
+        "priority": "5",
+        "eff_from": "May 06, 2026 16:00 UTC",
+        "expires": "Nov 02, 2026 15:59 UTC",
+        "desc": "FLW APPROACH PROCEDURES CHANGED DUE TO OBST: IAC RNP ILS/DME Z RWY34L(ZGSZ-5L-9), INTERMEDIATE APPROACH MOCA CHANGED FM 530M(QNH) TO 550M(QNH).",
+        "expired": false
+      },
+      {
+        "id": "G1656/26",
+        "q_code": "QPICH",
+        "priority": "5",
+        "eff_from": "May 06, 2026 16:00 UTC",
+        "expires": "Nov 02, 2026 15:59 UTC",
+        "desc": "FLW APPROACH PROCEDUER CHANGED,DUE TO OBST: IAC RNP ILS/DME Z RWY33(ZGSZ-5L-7), INTERMEDIATE APPROACH MOCA CHANGED FM 530M(QNH) TO 550M(QNH).",
+        "expired": false
+      },
+      {
+        "id": "G1658/26",
+        "q_code": "QPICH",
+        "priority": "5",
+        "eff_from": "May 06, 2026 16:00 UTC",
+        "expires": "Nov 02, 2026 15:59 UTC",
+        "desc": "FLW APPROACH PROCEDURES CHANGED DUE TO OBST: IAC RNP ILS/DME Z RWY34R(ZGSZ-5L-11), INTERMEDIATE APPROACH MOCA CHANGED FM 530M(QNH) TO 550M(QNH).",
+        "expired": false
+      },
+      {
+        "id": "G2015/26",
+        "q_code": "QPMXX",
+        "priority": "5",
+        "eff_from": "May 27, 2026 01:34 UTC",
+        "expires": "Nov 20, 2026 15:59 UTC",
+        "desc": "RWY15/33, RWY16L/34R AND RWY16R/34L HUD SPECIAL CAT I U/S.",
+        "expired": false
+      },
+      {
+        "id": "G2016/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "May 27, 2026 01:38 UTC",
+        "expires": "Nov 20, 2026 15:59 UTC",
+        "desc": "ADD NEW TEMPO OBSTACLES WITHIN A CIRCLE WITH A RADIUS OF 15KM CENTERED ON THE ARP: OBSTACLE ID/DESIGNATION TYPE POSITION MAG BRG(DEGREE)/DIST(M) ELEVATION(M) MARKING/LIGHTING TYPE AND COLOUR 01 OBST 024/1,430 70.0 LGT 02 OBST 049/1,097 70.0 LGT 03 OBST 050/1,142 70.0 LGT 04 OBST 056/1,137 70.0 LGT 05 OBST 059/1,140 70.0 LGT 06 OBST 058/1,200 70.0 LGT 07 OBST 056/1,198 70.0 LGT 08 OBST 048/1,210 70.0 LGT 09 OBST 040/1,279 70.0 LGT 10 OBST 026/1,499 70.0 LGT",
+        "expired": false
+      },
+      {
+        "id": "G2017/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "May 27, 2026 01:42 UTC",
+        "expires": "Nov 20, 2026 15:59 UTC",
+        "desc": "ADD TEMPO MOVING OBSTACLE MARKED WITH LGTS WI FLW AREA: AREA 1: N223938.2E1134835.5-N223939.2E1134837.5-N223938.1E1134838.2- N223938.2E1134838.5-N223937.2E1134839.2-N223936.0E1134836.7- N223938.2E1134835.5 AREA 2: N223935.8E1134836.9-N223936.9E1134839.2-N223925.4E1134844.9- N223914.6E1134850.3-N223913.8E1134848.4-N223924.6E1134842.8- N223935.8E1134836.9 AREA 3: N223823.3E1134916.3-N223818.4E1134918.9-N223818.5E1134921.1- N223811.8E1134924.5-N223809.7E1134919.6-N223816.0E1134916.4- N223817.5E1134917.4-N223822.6E1134914.7-N223823.3E1134916.3 AREA 4: N223852.7E1134856.5-N223854.1E1134859.6-N223855.4E1134902.6- N223853.2E1134903.8-N223851.0E1134904.9-N223848.8E1134905.9- N223846.5E1134906.8-N223844.3E1134907.6-N223841.8E1134908.1- N223839.4E1134908.8-N223837.1E1134909.6-N223834.6E1134910.7- N223833.8E1134908.9-N223836.1E1134907.5-N223838.2E1134906.1- N223840.2E1134904.6-N223842.1E1134902.9-N223 ) // // 844.1E1134901.4- N223846.2E1134900.0-N223848.3E1134858.8-N223850.5E1134857.7- N223852.7E1134856.5 AREA 5: N223914.0E1134848.1-N223915.0E1134850.3-N223912.3E1134851.8- N223910.6E1134852.8-N223908.9E1134853.9-N223906.8E1134855.6- END PART 1 OF 2 G2017/26 NOTAMR G0636/26 Q) ZGZU/QOBCE/IV/M/A/000/999/2238N11349E005 A) ZGSZ PART 2 OF 2 B) 2605270142 C) 2611201559 EST E) N223905.4E1134856.7-N223903.1E1134858.4-N223900.5E1134900.0- N223857.8E1134901.4-N223855.4E1134902.6-N223852.7E1134856.5- N223855.3E1134855.2-N223857.9E1134854.0-N223900.9E1134852.8- N223903.5E1134852.0-N223905.3E1134851.5-N223907.6E1134850.9- N223909.5E1134850.2-N223911.3E1134849.4-N223914.0E1134848.1 ALT:65.0M. ) // // END PART 2 OF 2",
+        "expired": false
+      },
+      {
+        "id": "G2299/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Jun 13, 2026 16:00 UTC",
+        "expires": "Dec 10, 2026 15:59 UTC",
+        "desc": "ADD TEMPO MOVING OBSTACLE MARKED WITH LGTS WI FLW AREA: AREA 1: N223454.3E1135045.6-N223454.3E1135045.9-N223449.1E1135040.7-N223452 .5E1135048.1-N223454.3E1135045.6 . ALT:92.8M. AREA 2: N223449.1E1135040.7-N223452.5E1135048.1-N223451.6E1135049.2-N223444 .0E1135041.9-N223444.0E1135041.5-N223446.6E1135038.3-N223449.1E1135 040.7 . ALT:94.0.",
+        "expired": false
+      },
+      {
+        "id": "G2199/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Jun 14, 2026 16:00 UTC",
+        "expires": "Dec 11, 2026 15:59 UTC",
+        "desc": "OBSTACLES WITHIN A CIRCLE WITH A RADIUS OF 15KM CENTERED ON THE ARP: OBSTACLE ID/DESIGNATION TYPE POSITION MAG BRG(DEGREE)/DIST(M) ELEVATION(M) MARKING/LIGHTING TYPE AND COLOUR 01 CRANE 116/1,794 60.0 LGT",
+        "expired": false
+      },
+      {
+        "id": "G2580/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Jun 26, 2026 02:21 UTC",
+        "expires": "Dec 20, 2026 15:59 UTC",
+        "desc": "OBSTACLES WITHIN A CIRCLE WITH A RADIUS OF 15KM CENTERED ON THE ARP: OBSTACLE ID/DESIGNATION TYPE POSITION MAG BRG(DEGREE)/DIST(M) ELEVATION(M) MARKING/LIGHTING TYPE AND COLOUR 01 CRANE 078/2,223 145.0 LGT 02 CRANE 079/2,241 145.0 LGT",
+        "expired": false
+      },
+      {
+        "id": "G2581/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Jun 26, 2026 02:24 UTC",
+        "expires": "Dec 20, 2026 15:59 UTC",
+        "desc": "NEW TEMPO OBST ERECTED BETWEEN TWO CIRCLES WITH THE RADIUS OF 15KM AND 50KM, ALL THE DATA BASED ON ARP: OBSTACLE ID/DESIGNATION TYPE POSITION MAG BRG(DEGREE)/DIST(M) ELEVATION(M) MARKING/LIGHTING TYPE AND COLOUR CRANE CRANE 315/35,124 399 LGT CRANE CRANE 318/34,070 392 LGT",
+        "expired": false
+      },
+      {
+        "id": "G3006/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Jul 16, 2026 16:00 UTC",
+        "expires": "Jan 12, 2027 15:59 UTC",
+        "desc": "ADD TEMPO MOVING OBSTACLE MARKED WITH LGTS WI FLW AREA: N223204.3E1135143.7-N223204.3E1135150.8-N223157.2E1135150.8-N223157 .2E1135143.6-N223204.3E1135143.7 ALT:198.3M",
+        "expired": false
+      },
+      {
+        "id": "G3008/26",
+        "q_code": "QPIAU",
+        "priority": "5",
+        "eff_from": "Jul 16, 2026 16:00 UTC",
+        "expires": "Jan 12, 2027 15:59 UTC",
+        "desc": "DUE TO OBST,FLW PROCEDURES U/S: ZGSZ-5L-13:IAC RNP ILS/DME W RWY34R(A",
+        "expired": false
+      },
+      {
+        "id": "G3603/26",
+        "q_code": "QFAHW",
+        "priority": "5",
+        "eff_from": "Aug 10, 2026 09:03 UTC",
+        "expires": "Nov 13, 2026 10:00 UTC",
+        "desc": "WIP WI FLW AREA: 1. 600M-832M SOUTH OF RWY15 THR, 685M -731M EAST OF RWY15/33 CL. 2. 808M-963M SOUTH OF RWY15 THR, 365M -478M EAST OF RWY15/33 CL. 3. 963M-1,133M SOUTH OF RWY15 THR, 433M -478M EAST OF RWY15/33 CL. 4. 1,133M-1,359M SOUTH OF RWY15 THR, 448M -478M EAST OF RWY15/33 CL. 5. 832M-1,359M SOUTH OF RWY15 THR, 478M -809M EAST OF RWY15/33 CL. 6. 1,359M-1,436M SOUTH OF RWY15 THR, 667M -809M EAST OF RWY15/33 CL.",
+        "expired": false
+      },
+      {
+        "id": "G3604/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Aug 10, 2026 09:05 UTC",
+        "expires": "Nov 13, 2026 10:00 UTC",
+        "desc": "FLW TWY CLSD DUE TO WIP: 1.TWY K2 EAST OF PRKG STAND NR.23. 2.TWY K1 EAST OF TWY B. 3.TWY B6. 4.TWY B7.",
+        "expired": false
+      },
+      {
+        "id": "G3605/26",
+        "q_code": "QMPLC",
+        "priority": "5",
+        "eff_from": "Aug 10, 2026 09:09 UTC",
+        "expires": "Nov 13, 2026 10:00 UTC",
+        "desc": "PRKG STAND NR.22,23,24,25,220,221,222,223,225,227,229,231,233,235,236,237,238, 239, 244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260 , 261,263,279,281,283,285 CLSD.",
+        "expired": false
+      },
+      {
+        "id": "G3722/26",
+        "q_code": "QXXXX",
+        "priority": "5",
+        "eff_from": "Aug 21, 2026 22:00 UTC",
+        "expires": "Jan 20, 2027 15:59 UTC",
+        "desc": "ADD NEW LGTS ON RAPID EXIT TWY A4,A5,A8,A9,C4-C9: 1.ADD 'NO-ENTRY'TWY CL LGTS ON EACH SIDE OF TWY A4,A5,A8,A9.RED LGT HEADING EAST,NO CHANGE FOR LGT VACATING RWY. 2.ADD 'NO-ENTRY'TWY CL LGTS ON EACH SIDE OF TWY C4-C9,RED LGT HEADING WEST,NO CHANGE FOR LGT VACATING RWY. 3.ADD TYPE A RWY GUARD LGTS ON BOTH SIDE OF TWY A4,A5,A8,A9,C4-C9,NEARBY RWY HOLDING POSITION SIGN,YELLOW LGT. 4. CREW PAY ATTENTION TO THE LGTS.",
+        "expired": false
+      },
+      {
+        "id": "G3717/26",
+        "q_code": "QMRLC",
+        "priority": "5",
+        "eff_from": "Aug 24, 2026 16:00 UTC",
+        "expires": "Oct 24, 2026 15:59 UTC",
+        "desc": "RWY16L/34R CLSD,AVBL FOR FLTCK.",
+        "expired": false
+      },
+      {
+        "id": "G3721/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Aug 24, 2026 16:00 UTC",
+        "expires": "Oct 24, 2026 15:59 UTC",
+        "desc": "FLW TWY CLSD DUE TO WIP: 1.TWY E BTN TWY E2 AND TWY T2. 2.TWY E BTN TWY G8 AND TWY E10. 3.TWY E3,E4,E5,E6,E7,E9,G3. 4.TWY E1,E2,E10,E11 CLSD WEST OF TWY E. 5.TWY G9 WEST OF TWY G.",
+        "expired": false
+      },
+      {
+        "id": "G3735/26",
+        "q_code": "QFAHW",
+        "priority": "5",
+        "eff_from": "Aug 24, 2026 16:00 UTC",
+        "expires": "Oct 24, 2026 15:59 UTC",
+        "desc": "WIP WI FLW AREA : 1. 324M-353M NORTH OF RWY16L THR,103M WEST-76M EAST OF RWY16L/34R CL. 2. 17M-324M NORTH OF RWY16L THR, 0M-76M EAST OF RWY16L/34R CL. 3. 32M-223M NORTH OF RWY16L THR, 76M-251M EAST OF RWY16L/34R CL. 4. 324M NORTH OF RWY16L THR-584M SOUTH OF RWY34R THR, 0M-207M WEST OF RWY16L/34R CL. 5. 0M OF RWY16L THR-268M SOUTH OF RWY34R THR, 0M-140M EAST OF RWY16L/34R CL. 6. 315M-957M SOUTH OF RWY16L THR, 140M-246M EAST OF RWY16L/34R CL. 7. 288M-776M NORTH OF RWY34R THR, 140M-246M EAST OF RWY16L/34R CL. 8. 41M NORTH-10M SOUTH OF RWY34R THR, 207M-247M WEST OF RWY16L/34R CL. 9. 268M-420M SOUTH OF RWY34R THR, 0M-58M EAST OF RWY16L/34R CL.",
+        "expired": false
+      },
+      {
+        "id": "G3807/26",
+        "q_code": "QILAS",
+        "priority": "5",
+        "eff_from": "Aug 26, 2026 16:00 UTC",
+        "expires": "Oct 31, 2026 15:59 UTC",
+        "desc": "RWY34R LOC 'IBA' 109.1MHZ U/S,DUE TO WIP.",
+        "expired": false
+      },
+      {
+        "id": "G3806/26",
+        "q_code": "QILAS",
+        "priority": "5",
+        "eff_from": "Aug 26, 2026 16:00 UTC",
+        "expires": "Oct 31, 2026 15:59 UTC",
+        "desc": "RWY16L LOC 'ISZ' 108.1MHZ U/S,DUE TO WIP.",
+        "expired": false
+      },
+      {
+        "id": "G3845/26",
+        "q_code": "QIDAS",
+        "priority": "5",
+        "eff_from": "Aug 27, 2026 02:11 UTC",
+        "expires": "Oct 31, 2026 15:59 UTC",
+        "desc": "RWY34R DME 'IBA' CH28X U/S DUE TO WIP.",
+        "expired": false
+      },
+      {
+        "id": "G3844/26",
+        "q_code": "QIGAS",
+        "priority": "5",
+        "eff_from": "Aug 27, 2026 02:16 UTC",
+        "expires": "Oct 31, 2026 15:59 UTC",
+        "desc": "RWY34R GP U/S DUE TO WIP.",
+        "expired": false
+      },
+      {
+        "id": "G3843/26",
+        "q_code": "QIDAS",
+        "priority": "5",
+        "eff_from": "Aug 27, 2026 02:16 UTC",
+        "expires": "Oct 31, 2026 15:59 UTC",
+        "desc": "RWY16L DME 'ISZ' CH18X U/S DUE TO WIP.",
+        "expired": false
+      },
+      {
+        "id": "G3842/26",
+        "q_code": "QIGAS",
+        "priority": "5",
+        "eff_from": "Aug 27, 2026 02:16 UTC",
+        "expires": "Oct 31, 2026 15:59 UTC",
+        "desc": "RWY16L GP U/S DUE TO WIP.",
+        "expired": false
+      },
+      {
+        "id": "G3988/26",
+        "q_code": "QFAHX",
+        "priority": "5",
+        "eff_from": "Sep 07, 2026 16:00 UTC",
+        "expires": "Nov 30, 2026 15:59 UTC",
+        "desc": "ACTIVITIES OF BIRD FLOCKS AND MIGRATION TAKE PLACE AROUND AD,CENTERED AT ARP WITH A RADIUS OF 8KM: ACTIVITY TIME:ALL DAY ,FOCUS ON 2200-0100(NEXT DAY),0800-1100,1200-1559(PEAK ACTIVITY 1200-1400). ALT: ACTIVITIES ON 0M-450M. MIGRATION ROUTE: FM NORTH TO SOUTH AERODROME AUTHORITY RESORTS TO DISPERSAL METHODS TO REDUCE BIRD ACTIVITIES. EXERCISE CAUTION WHILE LANDING AND TAKE-OFF.",
+        "expired": false
+      },
+      {
+        "id": "G4087/26",
+        "q_code": "QMPAW",
+        "priority": "5",
+        "eff_from": "Sep 15, 2026 09:01 UTC",
+        "expires": "Jan 20, 2027 15:59 UTC",
+        "desc": "PRKG STAND NR.27L,27R,29L,29R,30R,Z01,Z02 WITHDRAWN.",
+        "expired": false
+      },
+      {
+        "id": "G4311/26",
+        "q_code": "QFAHW",
+        "priority": "5",
+        "eff_from": "Sep 24, 2026 01:30 UTC",
+        "expires": "Oct 24, 2026 15:59 UTC",
+        "desc": "WIP WI FLW AREA: 245M - 248M NORTH OF RWY15 THR, 80M - 237M EAST OF RWY15/33 CL.",
+        "expired": false
+      },
+      {
+        "id": "G4312/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Sep 24, 2026 01:36 UTC",
+        "expires": "Dec 31, 2026 15:59 UTC",
+        "desc": "ADD NEW TEMPO OBSTACLES WITHIN A CIRCLE WITH A RADIUS OF 15KM(CENTERED ON THE ARP): OBSTACLE ID/DESIGNATION TYPE POSITION MAG BRG(DEGREE)/DIST(M) ELEVATION(M) MARKING/LIGHTING TYPE & COLOUR 01 CRANE 124/1,442 73.5 LGT 02 CRANE 128/1,528 82.4 LGT 03 CRANE 130/1,618 62.7 LGT 04 CRANE 123/1,573 82.1 LGT 05 CRANE 125/1,654 73.0 LGT",
+        "expired": false
+      }
+    ]
+  },
+  "ZUCK": {
+    "fetched_at": "2026-10-15 14:17 UTC",
+    "notams": [
+      {
+        "id": "U6336/25",
+        "q_code": "QNMXX",
+        "priority": "5",
+        "eff_from": "Dec 15, 2025 07:38 UTC",
+        "expires": "PERMANENT",
+        "desc": "QIJIANG VOR/DME 'QJG' 112.7MHZ/CH74X LIMITATION CHANGED AS FLW: 1.VOR U/S BEYOND 37NM ON RADIAL 027DEG FOR DEPARTURE PROCEDURE. 2.DME U/S BEYOND 23NM ON RADIAL 027DEG FOR DEPARTURE PROCEDURE. 3.DME U/S BEYOND 34NM ON RADIAL 005DEG FOR DEPARTURE PROCEDURE.",
+        "expired": false
+      },
+      {
+        "id": "U1704/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Apr 22, 2026 10:12 UTC",
+        "expires": "PERMANENT",
+        "desc": "ADD NEW OBSTACLES WITHIN A CIRCLE WITH A RADIUS OF 15KM (CENTERED OF THE ARP): OBSTACLE ID/DESIGNATION TYPE POSITION MAG BRG(DEGREE)/DIST(M) ELEVATION(M) MARKING/LIGHTING TYPE& COLOUR FLIGHT PROCEDURE/TAKE-OFF PATH AREA AFFECTED& REMARKS 1. NR.1 CRANE CRANE 303/1010 478.7 LGT 2. NR.2 CRANE CRANE 305/1078 472.5 LGT 3. NR.3 CRANE CRANE 306/939 484.7 LGT 4. NR.4 CRANE CRANE 308/1024 466.5 LGT 5. NR.5 CRANE CRANE 311/923 478.5 LGT",
+        "expired": false
+      },
+      {
+        "id": "U2095/26",
+        "q_code": "QMPLT",
+        "priority": "5",
+        "eff_from": "May 16, 2026 04:50 UTC",
+        "expires": "Nov 01, 2026 15:59 UTC",
+        "desc": "PARKING STAND NR.229 ONLY AVBL FOR ACFT WITH WINGSPAN NOT MORE THAN 36M.",
+        "expired": false
+      },
+      {
+        "id": "U2096/26",
+        "q_code": "QMPLT",
+        "priority": "5",
+        "eff_from": "May 16, 2026 04:52 UTC",
+        "expires": "Nov 01, 2026 15:59 UTC",
+        "desc": "ACFT ARE FORBIDDEN ENTER/EXIT PARKING STAND NR.101-107 AND NR.230.",
+        "expired": false
+      },
+      {
+        "id": "U3099/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Jun 28, 2026 13:05 UTC",
+        "expires": "Nov 29, 2026 22:00 UTC",
+        "desc": "FLW TWY CLSD DUE TO MAINT: 1.TWY Z1 BTN TWY C9 AND TWY C. 2.TWY Z1 BTN TWY D3 AND TWY D.",
+        "expired": false
+      },
+      {
+        "id": "U3465/26",
+        "q_code": "QNMXX",
+        "priority": "5",
+        "eff_from": "Jul 17, 2026 08:32 UTC",
+        "expires": "PERMANENT",
+        "desc": "BAISHA VOR/DME 'CJJ' 112.25MHZ/CH59Y LIMITATION CHANGED AS FLW: VOR/DME U/S BTN RADIAL 140DEG-220DEG CLOCKWISE.",
+        "expired": false
+      },
+      {
+        "id": "U3654/26",
+        "q_code": "QNMAS",
+        "priority": "5",
+        "eff_from": "Aug 04, 2026 15:00 UTC",
+        "expires": "Oct 28, 2026 02:00 UTC",
+        "desc": "FULING VOR/DME 'FLG' 114.0MHZ/CH87X U/S DUE TO WIP.",
+        "expired": false
+      },
+      {
+        "id": "U4106/26",
+        "q_code": "QFAHX",
+        "priority": "5",
+        "eff_from": "Aug 31, 2026 16:00 UTC",
+        "expires": "Nov 30, 2026 15:59 UTC",
+        "desc": "ACTIVITIES OF BIRD FLOCKS AND MIGRATION TAKE PLACE AROUND AD. ALT: 0M-1000M. MIGRATION ALT:2000M. MOVE FASTIGIUM TIME: 2300-0230(NEXT DAY),0900-1130,1200-1800 MIGRATION ROUTE:MOSTLY FROM NORTH TO SOUTH,FROM NORTHEAST TO SOUTHWEST,FROM NORTHWEST TO SOUTHEAST AERODROME AUTHORITY RESORTS TO DISPERSAL METHODS TO REDUCE BIRD ACTIVITIES. EXERCISE CAUTION WHILE LANDING AND TAKE-OFF.",
+        "expired": false
+      },
+      {
+        "id": "U4111/26",
+        "q_code": "QMPCS",
+        "priority": "5",
+        "eff_from": "Sep 01, 2026 09:00 UTC",
+        "expires": "PERMANENT",
+        "desc": "REF ZUCK-2P-1:APDC ,PARKING STAND NR.744,745,746,747 PUT INTO USE: PCR:PCR 930/R/A/W/T. PARKING STAND NR.744 LIMITATION: WINGSPAN :NOT MORE THAN 48M. FUSELAGE :NOT MORE THAN 49M. PARKING STAND NR.745,747 LIMITATION: WINGSPAN :NOT MORE THAN 65M. FUSELAGE :NOT MORE THAN 76M. PARKING STAND NR.746 LIMITATION: WINGSPAN :NOT MORE THAN 36M. FUSELAGE :NOT MORE THAN 45M.",
+        "expired": false
+      },
+      {
+        "id": "U4408/26",
+        "q_code": "QMOXX",
+        "priority": "5",
+        "eff_from": "Sep 24, 2026 03:35 UTC",
+        "expires": "Oct 29, 2026 10:00 UTC",
+        "desc": "STOP BAR LIGHTS OPERATION VERIFICATION IMPLEMENT WI AREA EAST OF TWY G, STOP BAR LIGHTS OPERATION RULES: 1. ACFT SHALL CROSS STOP BAR LIGHTS WHEN ALL CONDITIONS ARE MET: 1.1 RECEIVE THE INSTRUCTION TO ENTER OR CROSS RWY. 1.2 THE STOP BAR LIGHTS IS OFF. 1.3 TWY CL LIGHTS ARE ILLUMINATED (GREEN AND YELLOW). 2. IF ABOVE THREE CONDITIONS ARE NOT MET AT THE SAME TIME, ACFT PILOT SHALL CONTACT ATC TO CONFIRM AND FOLLOW THE ATC INSTRUCTION.",
+        "expired": false
+      },
+      {
+        "id": "U4677/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 02:00 UTC",
+        "expires": "Oct 16, 2026 10:00 UTC",
+        "desc": "FLW TWY CLSD DUE TO MAINT: 1.TWY B4 BTN TWY C AND TWY D. 2.TWY E1-E3,E7,E9,E10 CLSD WEST OF TWY D. 3.TWY C7-C10,D1-D4,E6.",
+        "expired": false
+      },
+      {
+        "id": "U4676/26",
+        "q_code": "QMRLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 02:00 UTC",
+        "expires": "Oct 16, 2026 10:00 UTC",
+        "desc": "RWY02R/20L CLSD,DUE TO MAINT. ACFT SHALL CROSS RWY02R/20L VIA TWY B1,E11.",
+        "expired": false
+      },
+      {
+        "id": "U4678/26",
+        "q_code": "QICAS",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 02:00 UTC",
+        "expires": "Oct 16, 2026 10:00 UTC",
+        "desc": "RWY02R ILS U/S DUE TO MAINT.",
+        "expired": false
+      },
+      {
+        "id": "U4679/26",
+        "q_code": "QIDAS",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 02:00 UTC",
+        "expires": "Oct 16, 2026 10:00 UTC",
+        "desc": "RWY02R DME 'IJC' CH26X U/S DUE TO MAINT.",
+        "expired": false
+      },
+      {
+        "id": "U4680/26",
+        "q_code": "QICAS",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 02:00 UTC",
+        "expires": "Oct 16, 2026 10:00 UTC",
+        "desc": "RWY20L ILS U/S DUE TO MAINT.",
+        "expired": false
+      },
+      {
+        "id": "U4681/26",
+        "q_code": "QIDAS",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 02:00 UTC",
+        "expires": "Oct 16, 2026 10:00 UTC",
+        "desc": "RWY20L DME 'IMW' CH38X U/S DUE TO MAINT.",
+        "expired": false
+      },
+      {
+        "id": "U4703/26",
+        "q_code": "QMRLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 18:00 UTC",
+        "expires": "Oct 16, 2026 22:00 UTC",
+        "desc": "RWY02L/20R CLSD DUE TO MAINT.",
+        "expired": false
+      },
+      {
+        "id": "U4704/26",
+        "q_code": "QMRLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 18:00 UTC",
+        "expires": "Oct 16, 2026 22:00 UTC",
+        "desc": "RWY02R/20L CLSD DUE TO MAINT.",
+        "expired": false
+      },
+      {
+        "id": "U4706/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 18:00 UTC",
+        "expires": "Oct 16, 2026 22:00 UTC",
+        "desc": "FLW TWY CLSD DUE TO MAINT: 1.TWY E3-E5,E7-E11,Z2-Z6,Z8,Z9 CLSD WEST OF TWY E. 2.TWY E SOUTH OF TWY B4. 3.TWY A SOUTH OF TWY A7. 4.TWY B,C,D. 5.TWY A7-A10 CLSD EAST OF TWY A. 6.TWY Z1 BTN TWY D AND TWY E. 7.TWY A1-A6,A11,B1-B8,C1-C10,D1-D4,E1-E2,E6.",
+        "expired": false
+      },
+      {
+        "id": "U4705/26",
+        "q_code": "QMPLT",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 18:00 UTC",
+        "expires": "Oct 16, 2026 22:00 UTC",
+        "desc": "ACFT ARE FORBIDDEN ENTER/EXIT PARKING STAND NR.201-229,401-405,451-456 DUE TO MAINT.",
+        "expired": false
+      },
+      {
+        "id": "U4748/26",
+        "q_code": "QMRLC",
+        "priority": "5",
+        "eff_from": "Oct 17, 2026 02:00 UTC",
+        "expires": "Oct 20, 2026 10:00 UTC",
+        "desc": "RWY03L/21R CLSD, ACFT SHALL CROSS RWY03L/21R VIA TWY Z6 ,H3 ,H7.",
+        "expired": false
+      },
+      {
+        "id": "U4749/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 17, 2026 02:00 UTC",
+        "expires": "Oct 20, 2026 10:00 UTC",
+        "desc": "FLW TWY CLSD: 1.TWY H1,H2,H4-H6,Z1 CLSD EAST OF TWY J. 2.TWY J2-J6.",
+        "expired": false
+      },
+      {
+        "id": "U4753/26",
+        "q_code": "QIDAS",
+        "priority": "5",
+        "eff_from": "Oct 17, 2026 02:00 UTC",
+        "expires": "Oct 20, 2026 10:00 UTC",
+        "desc": "RWY21R DME 'ICO' CH42X U/S DUE TO MAINT.",
+        "expired": false
+      },
+      {
+        "id": "U4752/26",
+        "q_code": "QICAS",
+        "priority": "5",
+        "eff_from": "Oct 17, 2026 02:00 UTC",
+        "expires": "Oct 20, 2026 10:00 UTC",
+        "desc": "RWY21R ILS U/S DUE TO MAINT.",
+        "expired": false
+      },
+      {
+        "id": "U4751/26",
+        "q_code": "QIDAS",
+        "priority": "5",
+        "eff_from": "Oct 17, 2026 02:00 UTC",
+        "expires": "Oct 20, 2026 10:00 UTC",
+        "desc": "RWY03L DME 'IQT' CH22X U/S DUE TO MAINT.",
+        "expired": false
+      },
+      {
+        "id": "U4750/26",
+        "q_code": "QICAS",
+        "priority": "5",
+        "eff_from": "Oct 17, 2026 02:00 UTC",
+        "expires": "Oct 20, 2026 10:00 UTC",
+        "desc": "RWY03L ILS U/S DUE TO MAINT.",
+        "expired": false
+      },
+      {
+        "id": "U4754/26",
+        "q_code": "QIIAS",
+        "priority": "5",
+        "eff_from": "Oct 17, 2026 02:00 UTC",
+        "expires": "Oct 20, 2026 10:00 UTC",
+        "desc": "RWY21R IM U/S DUE TO MAINT.",
+        "expired": false
+      }
+    ]
+  },
+  "ZJHK": {
+    "fetched_at": "2026-10-15 14:17 UTC",
+    "notams": [
+      {
+        "id": "G4238/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Sep 19, 2026 18:00 UTC",
+        "expires": "Dec 18, 2026 17:59 UTC",
+        "desc": "FLW TWY CLSD WITH LGTS DUE TO WIP: 1.TWY A BTN TWY B1 AND TWY B8 . 2.TWY A2-A4 . 3.TWY B2,B5,B6,B7,T1,T2 CLSD SOUTH OF TWY B. EXERCISE CAUTION WHILE LANDING AND TAKE-OFF.",
+        "expired": false
+      },
+      {
+        "id": "G4267/26",
+        "q_code": "QFAHW",
+        "priority": "5",
+        "eff_from": "Sep 20, 2026 08:06 UTC",
+        "expires": "Oct 20, 2026 22:00 UTC",
+        "desc": "WIP WI FLW AREA WITH MARKINGS: 405M-570M NORTH OF RWY09 CL,1,050M-1,080M EAST OF RWY09 THR.",
+        "expired": false
+      },
+      {
+        "id": "G4284/26",
+        "q_code": "QXXXX",
+        "priority": "5",
+        "eff_from": "Sep 21, 2026 06:31 UTC",
+        "expires": "Dec 30, 2026 15:59 UTC",
+        "desc": "AD IMPLEMENTS TAKEOFF AUTOMATIC LEAVE FREQUENCY TEST: 1.TOWER ATC WILL SPECIFY THE FIRST CONTACT FREQUENCY AFTER ACFT TAKEOFF IN ATC CLEARANCE. ACFT SHALL CONTACT DESIGNATED FREQUENCY AFTER TAKEOFF WITHOUT TOWER ATC INSTRUCTION. 2.WHEN THE PILOT CHANGING FREQUENCY,THE ALTITUDE OF ACFT NOT LESS THAN 100M(DAYLIGHT) OR 150M(NIGHT).",
+        "expired": false
+      },
+      {
+        "id": "G4319/26",
+        "q_code": "QXXXX",
+        "priority": "5",
+        "eff_from": "Sep 26, 2026 21:30 UTC",
+        "expires": "Dec 25, 2026 15:59 UTC",
+        "desc": "ADD NEW LGTS ON RAPID EXIT TWY A5,A6 : 1.ADD 'NO-ENTRY'TWY CL LGTS ON EACH SIDE OF TWY A5,A6, RED LGT HEADING NORTH,NO CHANGE FOR LGT VACATING RWY. 2.ADD TYPE A RWY GUARD LGTS ON BOTH SIDE OF TWY A5,A6, NEARBY RWY HOLDING POSITION SIGN,YELLOW LGT. 3. CREW PAY ATTENTION TO THE LGTS.",
+        "expired": false
+      },
+      {
+        "id": "G4345/26",
+        "q_code": "QMPLC",
+        "priority": "5",
+        "eff_from": "Sep 28, 2026 01:17 UTC",
+        "expires": "Dec 25, 2026 15:59 UTC",
+        "desc": "PARKING STAND NR.401 CLSD DUE TO WIP.",
+        "expired": false
+      },
+      {
+        "id": "G4346/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Sep 28, 2026 01:20 UTC",
+        "expires": "Dec 25, 2026 15:59 UTC",
+        "desc": "FLW TWY CLSD WITH LGTS DUE TO WIP: 1.TWY V2 EAST OF PARKING STAND NR.401. 2.TWY C12 SOUTH OF TWY C. EXERCISE CAUTION WHILE LANDING AND TAKE-OFF.",
+        "expired": false
+      },
+      {
+        "id": "G4356/26",
+        "q_code": "QPDCH",
+        "priority": "5",
+        "eff_from": "Sep 28, 2026 11:32 UTC",
+        "expires": "Dec 11, 2026 15:59 UTC",
+        "desc": "DUE TO TEMPO OBST,RWY28 SID PROCEDURE ADJUSTED AS FLW: 1. REF AIP CHINA ZJHK-7D/7M,SAM-1ZD:BEFORE D10.8 MLT,CLIMB GRADIENT 3.7%. 2. REF AIP CHINA ZJHK-7D/7M,SAM-2ZD:BEFORE D10.8 MLT,CLIMB GRADIENT CHANGED FM 4.4% TO 5.0%. 3. REF AIP CHINA ZJHK-7H,SAM-8ZD:BEFORE HK624, CLIMB GRADIENT CHANGED FM 4.4% TO 5.0%.",
+        "expired": false
+      },
+      {
+        "id": "G4357/26",
+        "q_code": "QAACH",
+        "priority": "5",
+        "eff_from": "Sep 28, 2026 11:39 UTC",
+        "expires": "Dec 11, 2026 15:59 UTC",
+        "desc": "DUE TO TEMPO OBST, MSA ADJUSTED AS FLW: 1.REF AIP CHINA ZJHK-7C,7D,9A,10A,10B:CENTERED AT NYB,210DEG-320DEG,MSA CHANGED FM 750M TO 800M. 2.REF AIP CHINA ZJHK-7A,7B,7J,7K,7L,7M,9B,9E,9F,10C,10D,10E,10F,10G,10H: CENTERED AT MLT, 030DEG-110DEG,MSA CHANGED FM 750M TO 800M. 3.REF AIP CHINA ZJHK-7E,7F,7G,7H,9C,9D,20A,20B,20C,20D: CENTERED AT ARP,080DEG-180DEG,MSA CHANGED FM 750M TO 800M.",
+        "expired": false
+      },
+      {
+        "id": "G4358/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Sep 28, 2026 11:44 UTC",
+        "expires": "Dec 11, 2026 15:59 UTC",
+        "desc": "ADD NEW TEMPO OBSTACLES WITHIN A CIRCLE WITH A RADIUS OF 15KM (CENTERED ON THE CENTER OF RWY09/27): OBSTACLE ID/DESIGNATION TYPE POSITION MAG BRG(DEGREE)/DIST(M) ELEVATION(M) MARKING/LIGHTING TYPE& COLOUR FLIGHT PROCEDURE/TAKE-OFF PATH AREA AFFECTED & REMARKS CRANE CRANE 312/14,209 498 LGT MSA(MLT,NYB)",
+        "expired": false
+      },
+      {
+        "id": "G4389/26",
+        "q_code": "QFAHX",
+        "priority": "5",
+        "eff_from": "Sep 30, 2026 06:21 UTC",
+        "expires": "Oct 31, 2026 15:59 UTC",
+        "desc": "ACTIVITIES OF BIRD FLOCKS AND MIGRATION WILL TAKE PLACE CENTERED AT ARP WITH RADIUS OF 50KM. ALT: ABOUT 0M-4,000M. MOVE FASTIGIUM TIME:2000-0300(NEXT DAY),0700-0930,1100-1800. ROUTES: ALONG SEA SHORE, LGTS, RIVERS AND MOUNTAINS. EXERCISE CAUTION WHILE LANDING AND TAKE-OFF.",
+        "expired": false
+      },
+      {
+        "id": "G4599/26",
+        "q_code": "QNMAS",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 08:56 UTC",
+        "expires": "Jan 15, 2027 10:00 UTC",
+        "desc": "NANYINGBINDAO VOR/DME 'NYB' 113.3MHZ/CH80X U/S DUE TO MAINT.",
+        "expired": false
+      },
+      {
+        "id": "G4576/26",
+        "q_code": "QMRLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 17:00 UTC",
+        "expires": "Oct 23, 2026 22:00 UTC",
+        "desc": "RWY09/27 CLSD DUE TO WIP.",
+        "expired": false
+      },
+      {
+        "id": "G4578/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 17:00 UTC",
+        "expires": "Oct 23, 2026 22:00 UTC",
+        "desc": "FLW TWY CLSD WITH LGTS DUE TO WIP: 1.TWY A1,A5-A7. 2.TWY B1 SOUTH OF TWY B. EXERCISE CAUTION WHILE LANDING AND TAKE-OFF.",
+        "expired": false
+      },
+      {
+        "id": "G4579/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 17:00 UTC",
+        "expires": "Oct 23, 2026 22:00 UTC",
+        "desc": "TWY B CLSD BTN TWY B5 AND TWY B8 WITH LGTS DUE TO WIP.EXERCISE CAUTION WHILE LANDING AND TAKE-OFF.",
+        "expired": false
+      }
+    ]
+  },
+  "VHHH": {
+    "fetched_at": "2026-10-15 14:17 UTC",
+    "notams": [
+      {
+        "id": "A1851/26",
+        "q_code": "QXXXX",
+        "priority": "5",
+        "eff_from": "Aug 10, 2026 08:29 UTC",
+        "expires": "PERMANENT",
+        "desc": "REF AIP HK GEN 3.3 PARA 1.1 AND GEN 3.4 PARA 1.1, TEL NR OF ASSISTANT DIRECTOR-GENERAL OF CIVIL AVIATION (AIR TRAFFIC MANAGEMENT) CHANGED TO 2910 6988.",
+        "expired": false
+      },
+      {
+        "id": "A2301/26",
+        "q_code": "QPOCH",
+        "priority": "5",
+        "eff_from": "Oct 02, 2026 10:20 UTC",
+        "expires": "PERMANENT",
+        "desc": "AMEND OCA(OCH) VALUE AND RVR REQUIREMENT OF THE FOLLOWING INSTRUMENT APPROACH PROCEDURES: RNP Z RWY 07R (A",
+        "expired": false
+      },
+      {
+        "id": "A2341/26",
+        "q_code": "QPCCA",
+        "priority": "5",
+        "eff_from": "Oct 09, 2026 03:38 UTC",
+        "expires": "Nov 09, 2026 23:59 UTC",
+        "desc": "REF AIP AMDT 7/26, RNAV1(DME/DME/IRU) CONTINGENCY PROCEDURE TAKES EFFECT FROM 9 JULY 2026. RNAV TRANSITION FOR ILS RWY25R AVBL FOR BOTH RNP1 AND RNAV1(DME/DME/IRU) CAPABLE ACFT. THIS NOTAM SUPPLEMENT THE INFORMATION ON AIC 30/24 PARA.3.1",
+        "expired": false
+      },
+      {
+        "id": "A2348/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 12, 2026 08:00 UTC",
+        "expires": "Oct 16, 2026 14:00 UTC",
+        "desc": "TWY F BTN TWY E2 AND TWY D CLSD DUE WIP",
+        "expired": false
+      },
+      {
+        "id": "A2361/26",
+        "q_code": "QMRLC",
+        "priority": "5",
+        "eff_from": "Oct 12, 2026 08:00 UTC",
+        "expires": "Oct 16, 2026 14:00 UTC",
+        "desc": "CENTRE RWY (RWY07C/RWY25C) CLSD ON STANDBY DUE WIP",
+        "expired": false
+      },
+      {
+        "id": "A2372/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 17:00 UTC",
+        "expires": "Oct 15, 2026 22:45 UTC",
+        "desc": "THE FLW TWY AND TXL CLSD DUE WIP TWY Y BTN TWY D AND TWY E TWY Z BTN TWY D AND TWY E TWY E BTN TWY Y AND TWY F6 TXL R ABM STAND D328",
+        "expired": false
+      },
+      {
+        "id": "A2373/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 18:01 UTC",
+        "expires": "Oct 15, 2026 22:45 UTC",
+        "desc": "TWY H BTN TWY W AND TXL H8 CLSD DUE WIP",
+        "expired": false
+      },
+      {
+        "id": "A2374/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 18:01 UTC",
+        "expires": "Oct 15, 2026 23:30 UTC",
+        "desc": "TWY C BTN TWY C6 AND TWY C10 CLSD DUE WIP",
+        "expired": false
+      },
+      {
+        "id": "A2375/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 16, 2026 01:00 UTC",
+        "expires": "Oct 16, 2026 07:00 UTC",
+        "desc": "TXL L ABM STAND X27 CLSD DUE WIP",
+        "expired": false
+      },
+      {
+        "id": "A2376/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 16, 2026 17:30 UTC",
+        "expires": "Oct 16, 2026 22:59 UTC",
+        "desc": "THE FLW TWY AND TXL CLSD DUE WIP TWY V BTN TWY V1 AND TWY V4 TXL U2",
+        "expired": false
+      },
+      {
+        "id": "A2377/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 16, 2026 18:01 UTC",
+        "expires": "Oct 16, 2026 23:30 UTC",
+        "desc": "THE FLW TWY CLSD DUE WIP TWY B12 TWY B BTN TWY W AND TXL B7 TWY F BTN TWY E3 AND TXL E4 TWY B BTN TXL M AND TWY N TWY B BTN TXL R AND TWY S",
+        "expired": false
+      },
+      {
+        "id": "A2378/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 17, 2026 18:01 UTC",
+        "expires": "Oct 17, 2026 23:30 UTC",
+        "desc": "THE FLW TWY CLSD DUE WIP TWY J EAST OF TWY J9 TWY J10 SOUTH OF TWY J TWY J11 SOUTH OF TWY J TWY K7 TWY K EAST OF TXL L3",
+        "expired": false
+      }
+    ]
+  },
+  "VTBS": {
+    "fetched_at": "2026-10-15 14:17 UTC",
+    "notams": [
+      {
+        "id": "A3363/26",
+        "q_code": "QFDAS",
+        "priority": "5",
+        "eff_from": "Aug 28, 2026 09:00 UTC",
+        "expires": "Nov 26, 2026 06:00 UTC",
+        "desc": "ADVANCED VISUAL DOCKING GUIDANCE SYSTEM (A-VDGS) ACFT STAND NR 119 505 512 AND 520 U/S DUE TO MAINT RMK: ACFT HAVE TO FLW MARSHALLING SIGNALS STRICTLY",
+        "expired": false
+      },
+      {
+        "id": "A3415/26",
+        "q_code": "QMPLC",
+        "priority": "5",
+        "eff_from": "Sep 01, 2026 10:00 UTC",
+        "expires": "Nov 01, 2026 10:00 UTC",
+        "desc": "ACFT STAND NR G3 CLSD DUE TO WIP",
+        "expired": false
+      },
+      {
+        "id": "A3956/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 08, 2026 05:00 UTC",
+        "expires": "Oct 20, 2026 16:59 UTC",
+        "desc": "TWY CLSD DUE TO WIP DETAIL AS FLW: -TWY K BTN TWY D AND TWY J4 -TWY J3 -TWY J4",
+        "expired": false
+      },
+      {
+        "id": "A4051/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 14, 2026 07:57 UTC",
+        "expires": "Oct 19, 2026 01:00 UTC",
+        "desc": "TWY CLSD DUE TO WIP DETAIL AS FLW: -TWY E BTN TWY D1 AND TWY D2 -TWY D1 -TWY D BEHIND ACFT STAND NR 517-525",
+        "expired": false
+      },
+      {
+        "id": "A4055/26",
+        "q_code": "QFDAS",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 01:00 UTC",
+        "expires": "Oct 16, 2026 11:00 UTC",
+        "desc": "ADVANCED VISUAL DOCKING GUIDANCE SYSTEM (A-VDGS) ACFT STAND NR 119 TO 123 U/S DUE TO MAINT RMK: ACFT HAVE TO FLW MARSHALLING SIGNALS STRICTLY",
+        "expired": false
+      },
+      {
+        "id": "A4060/26",
+        "q_code": "QMRLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 19:00 UTC",
+        "expires": "Oct 15, 2026 23:30 UTC",
+        "desc": "RWY 01/19 CLSD DUE TO WIP",
+        "expired": false
+      },
+      {
+        "id": "A4061/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 19:00 UTC",
+        "expires": "Oct 18, 2026 23:00 UTC",
+        "desc": "TWY J BTN TWY J1 AND TWY J2 CLSD DUE TO WIP",
+        "expired": false
+      },
+      {
+        "id": "A4064/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 19:00 UTC",
+        "expires": "Oct 15, 2026 23:30 UTC",
+        "desc": "TWY CLSD DUE TO WIP DETAIL AS FLW: -TWY B BTN TWY C8 AND TWY B13 -TWY B7 TO TWY B13 -TWY C BTN TWY C8 AND TWY K -TWY C9 -TWY J BTN TWY C AND TWY J2 -TWY J2 -TXL T19 BTN TWY C AND BEHIND ACFT STAND NR S102",
+        "expired": false
+      },
+      {
+        "id": "A4053/26",
+        "q_code": "QMRLC",
+        "priority": "5",
+        "eff_from": "Oct 17, 2026 20:30 UTC",
+        "expires": "Oct 17, 2026 21:45 UTC",
+        "desc": "RWY 01/19 CLSD DUE TO WIP",
+        "expired": false
+      },
+      {
+        "id": "J7098/26",
+        "q_code": "QWELW",
+        "priority": "5",
+        "eff_from": "Oct 19, 2026 23:00 UTC",
+        "expires": "Oct 21, 2026 02:30 UTC",
+        "desc": "ILS/DME RWY 02R FLTCK WILL TAKE PLACE RADIUS 18NM CENTRE 134109N1004456E DEP/ARR ACFT WILL BE DLA DURING THIS PERIOD",
+        "expired": false
+      },
+      {
+        "id": "A3668/26",
+        "q_code": "QOBTT",
+        "priority": "5",
+        "eff_from": "Oct 29, 2026 00:00 UTC",
+        "expires": "Nov 11, 2026 23:59 UTC",
+        "desc": "TRIGGER NOTAM-PERM AIRAC AIP AMDT 11/26 WEF 29 OCT 2026. AD 2-VTBS-1 AD 2.10 AD OBST",
+        "expired": false
+      }
+    ]
+  },
+  "RJTT": {
+    "fetched_at": "2026-10-15 14:17 UTC",
+    "notams": [
+      {
+        "id": "J1577/26",
+        "q_code": "QOLAS",
+        "priority": "5",
+        "eff_from": "Jul 21, 2026 08:00 UTC",
+        "expires": "Oct 20, 2026 08:00 UTC",
+        "desc": "OBST LGT U/S TYPE: BLDG PSN: 353922.0N1394523.0E ELEV: 776FT AMSL (MINATO-KU IN TOKYO)",
+        "expired": false
+      },
+      {
+        "id": "J1623/26",
+        "q_code": "QMRAW",
+        "priority": "5",
+        "eff_from": "Jul 30, 2026 21:30 UTC",
+        "expires": "Oct 28, 2026 21:30 UTC",
+        "desc": "GROOVING FOR RWY 16L/34R PARTLY ERASED DUE TO MAINT 1.LEN: 98.0M (BTN 1004.8M AND 1102.8M FM RWY 34R TH",
+        "expired": false
+      },
+      {
+        "id": "J1649/26",
+        "q_code": "QOBAW",
+        "priority": "5",
+        "eff_from": "Jul 31, 2026 08:13 UTC",
+        "expires": "Oct 30, 2026 15:00 UTC",
+        "desc": "OBST DAY MARKING ERASED TYPE: CHIMNEY PSN: 353818.0N1394225.0E ELEV: 515FT AMSL (MEGURO-KU IN TOKYO)",
+        "expired": false
+      },
+      {
+        "id": "J1674/26",
+        "q_code": "QOLAS",
+        "priority": "5",
+        "eff_from": "Aug 03, 2026 08:32 UTC",
+        "expires": "Nov 01, 2026 01:00 UTC",
+        "desc": "OBST LGT U/S TYPE: POLE PSN: 353819.7N1395023.3E ELEV: 50FT AMSL (KOTO-KU IN TOKYO)",
+        "expired": false
+      },
+      {
+        "id": "J1678/26",
+        "q_code": "QXXXX",
+        "priority": "5",
+        "eff_from": "Aug 04, 2026 02:05 UTC",
+        "expires": "Oct 28, 2026 14:59 UTC",
+        "desc": "RWY INCURSION WARNING OPERATION SUSPENDED DUE TO MAINT",
+        "expired": false
+      },
+      {
+        "id": "V0585/26",
+        "q_code": "QPIAU",
+        "priority": "5",
+        "eff_from": "Aug 06, 2026 15:00 UTC",
+        "expires": "Mar 31, 2027 15:00 UTC",
+        "desc": "[US DOD PROCEDURAL NOTAM] INSTRUMENT APPROACH PROCEDURE NOT AUTHORIZED ILS Y RWY 34R (CATII); ILS Z RWY 34R (CATII): DO NOT USE.",
+        "expired": false
+      },
+      {
+        "id": "J1708/26",
+        "q_code": "QXXXX",
+        "priority": "5",
+        "eff_from": "Aug 12, 2026 07:45 UTC",
+        "expires": "Nov 11, 2026 14:30 UTC",
+        "desc": "DISPLAY OF TARGET START UP APPROVAL TIME(TSAT) ON VISUAL-DOCKING-GUIDANCE-SYSTEM FOR SPOT 18 THRU 23 U/S DUE TO TROUBLE RMK:REF AIP RJTT AD 2.20",
+        "expired": false
+      },
+      {
+        "id": "J1763/26",
+        "q_code": "QOLAS",
+        "priority": "5",
+        "eff_from": "Aug 22, 2026 06:14 UTC",
+        "expires": "Nov 18, 2026 15:00 UTC",
+        "desc": "OBST LGT U/S TYPE: BLDG PSN: 353823.9N1394445.5E ELEV: 330FT AMSL (MINATO-KU IN TOKYO)",
+        "expired": false
+      },
+      {
+        "id": "J1654/26",
+        "q_code": "QOBCE",
+        "priority": "5",
+        "eff_from": "Aug 24, 2026 23:00 UTC",
+        "expires": "Oct 30, 2026 08:00 UTC",
+        "desc": "HEAVY EQPT EXIST ABV CONICAL SFC 1.PSN: BOUNDED BY FLW POINT 353510.0N1394822.6E - 353509.0N1394823.4E - 353507.7N1394821.0E - 353508.4N1394819.7E - 353510.0N1394822.6E (APRX QTE/032DEG 4211.623M FM RJTT ARP) (OTA-KU IN TOKYO) 2.NUMBER : 1 3.RMK: (1)WX MNM,INSTRUMENT APCH PROC,SID,STAR NO CHANGE (2)OBST LGT AND OBST DAY MARKING INSTL",
+        "expired": false
+      },
+      {
+        "id": "J1782/26",
+        "q_code": "QWULW",
+        "priority": "5",
+        "eff_from": "Aug 28, 2026 00:00 UTC",
+        "expires": "Nov 23, 2026 06:00 UTC",
+        "desc": "UNMANNED ACFT: AREA: BOUNDED BY FLW POINTS 354014N1394530E - 354016N1394524E - 354015N1394523E - 354012N1394529E - 354014N1394530E (CHIYODA-KU IN TOKYO) WT: 1.1KG",
+        "expired": false
+      },
+      {
+        "id": "J1826/26",
+        "q_code": "QOLAS",
+        "priority": "5",
+        "eff_from": "Aug 31, 2026 09:38 UTC",
+        "expires": "Nov 30, 2026 08:00 UTC",
+        "desc": "OBST LGT U/S TYPE: BLDG PSN: 354005.0N1394558.0E ELEV: 524FT AMSL (CHUO-KU IN TOKYO)",
+        "expired": false
+      },
+      {
+        "id": "J1833/26",
+        "q_code": "QOLAS",
+        "priority": "5",
+        "eff_from": "Aug 31, 2026 12:36 UTC",
+        "expires": "Nov 30, 2026 07:00 UTC",
+        "desc": "OBST LGT U/S TYPE: BLDG PSN: 353916.7N1394506.4E ELEV: 454FT AMSL (MINATO-KU IN TOKYO)",
+        "expired": false
+      },
+      {
+        "id": "J1864/26",
+        "q_code": "QWULW",
+        "priority": "5",
+        "eff_from": "Sep 13, 2026 01:00 UTC",
+        "expires": "Nov 15, 2026 07:00 UTC",
+        "desc": "BEYOND VISUAL LINE OF SIGHT UNMANNED ACFT: AREA: 70M EITHER SIDE OF A LINE 352247.14N1394006.12E - 352132.68N1394006.12E - 352132.68N1394135.40E - 352247.14N1394135.40E (YOKOHAMA-SHI IN KANAGAWA) WT: 0.7KG CONTACT INFORMATION: 045-719-4321",
+        "expired": false
+      },
+      {
+        "id": "J1896/26",
+        "q_code": "QWULW",
+        "priority": "5",
+        "eff_from": "Sep 14, 2026 20:22 UTC",
+        "expires": "Oct 31, 2026 08:27 UTC",
+        "desc": "UNMANNED ACFT: AREA: BOUNDED BY FLW POINTS 354150N1394201E - 354149N1394205E - 354148N1394205E - 354148N1394206E - 354146N1394206E - 354145N1394206E - 354142N1394205E - 354143N1394201E - 354144N1394201E - 354150N1394201E (SHINJUKU-KU IN TOKYO) WT: 4.3KG FLT TIME: HJ",
+        "expired": false
+      },
+      {
+        "id": "J1918/26",
+        "q_code": "QOLAS",
+        "priority": "5",
+        "eff_from": "Sep 15, 2026 09:35 UTC",
+        "expires": "Dec 12, 2026 08:00 UTC",
+        "desc": "OBST LGT U/S TYPE: TOWER PSN: 354413.0N1393846.0E ELEV: 417FT AMSL (NERIMA-KU IN TOKYO)",
+        "expired": false
+      },
+      {
+        "id": "J1931/26",
+        "q_code": "QOLAS",
+        "priority": "5",
+        "eff_from": "Sep 17, 2026 20:08 UTC",
+        "expires": "Dec 15, 2026 09:00 UTC",
+        "desc": "OBST LGT U/S TYPE: BLDG PSN: 353806.0N1394741.0E ELEV: 267FT AMSL (KOTO-KU IN TOKYO) RMK: OBST LGT IN PLACE OF OBST DAY MARKING FOR BLDG",
+        "expired": false
+      },
+      {
+        "id": "J1934/26",
+        "q_code": "QOLAS",
+        "priority": "5",
+        "eff_from": "Sep 17, 2026 22:53 UTC",
+        "expires": "Dec 14, 2026 08:00 UTC",
+        "desc": "OBST LGT U/S TYPE: POWER LINE TOWER PSN: 353910.7N1395339.4E ELEV: 210FT AMSL (URAYASU-SHI IN CHIBA)",
+        "expired": false
+      },
+      {
+        "id": "J1935/26",
+        "q_code": "QOLAS",
+        "priority": "5",
+        "eff_from": "Sep 17, 2026 22:57 UTC",
+        "expires": "Dec 14, 2026 08:00 UTC",
+        "desc": "OBST LGT U/S TYPE: POWER LINE TOWER PSN: 354140.4N1395700.6E ELEV: 213FT AMSL (ICHIKAWA-SHI IN CHIBA)",
+        "expired": false
+      },
+      {
+        "id": "J1936/26",
+        "q_code": "QOLAS",
+        "priority": "5",
+        "eff_from": "Sep 17, 2026 23:01 UTC",
+        "expires": "Dec 14, 2026 08:00 UTC",
+        "desc": "OBST LGT U/S TYPE: POWER LINE TOWER PSN: 354151.0N1395729.0E ELEV: 243FT AMSL (ICHIKAWA-SHI IN CHIBA)",
+        "expired": false
+      },
+      {
+        "id": "J1954/26",
+        "q_code": "QOLAS",
+        "priority": "5",
+        "eff_from": "Sep 21, 2026 05:04 UTC",
+        "expires": "Dec 21, 2026 03:00 UTC",
+        "desc": "OBST LGT U/S TYPE: BLDG PSN: 354227.0N1393953.0E ELEV: 453FT AMSL (NAKANO-KU IN TOKYO)",
+        "expired": false
+      },
+      {
+        "id": "J1997/26",
+        "q_code": "QOLAS",
+        "priority": "5",
+        "eff_from": "Sep 25, 2026 10:49 UTC",
+        "expires": "Dec 24, 2026 07:00 UTC",
+        "desc": "OBST LGT U/S TYPE: BLDG PSN: 353945.0N1395115.0E ELEV: 295FT AMSL (EDOGAWA-KU IN TOKYO)",
+        "expired": false
+      },
+      {
+        "id": "J2016/26",
+        "q_code": "QOLAS",
+        "priority": "5",
+        "eff_from": "Sep 28, 2026 21:52 UTC",
+        "expires": "Dec 28, 2026 03:00 UTC",
+        "desc": "OBST LGT U/S TYPE: BLDG PSN: 353952.0N1394653.0E ELEV: 333FT AMSL (CHUO-KU IN TOKYO)",
+        "expired": false
+      },
+      {
+        "id": "J2023/26",
+        "q_code": "QLRAS",
+        "priority": "5",
+        "eff_from": "Sep 30, 2026 13:52 UTC",
+        "expires": "Nov 30, 2026 21:00 UTC",
+        "desc": "VARIABLE MESSAGE SIGNS(VMS) FOR TWY L9 U/S DUE TO TROUBLE",
+        "expired": false
+      },
+      {
+        "id": "J1987/26",
+        "q_code": "QMRAW",
+        "priority": "5",
+        "eff_from": "Sep 30, 2026 15:00 UTC",
+        "expires": "Oct 28, 2026 15:00 UTC",
+        "desc": "GROOVING FOR RWY 16L/34R PARTLY,GRADUALLY ERASED OR INSTALLED RMK: (1)REF AIP SUP 212/26 ITEM RWY:53,58 (2)THE EXACT TIME OF NEXT PERIOD WILL BE NOTIFIED BY FURTHER NOTAM",
+        "expired": false
+      },
+      {
+        "id": "E5366/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Sep 30, 2026 15:00 UTC",
+        "expires": "Oct 28, 2026 15:00 UTC",
+        "desc": "TWY M1(BEHIND SPOT 23),N2(BTN N AND SPOT 935),F CLSD RMK: (1)REF AIP SUP 212/26 ITEM TWY:A,B,D (2)THE EXACT TIME OF NEXT PERIOD WILL BE NOTIFIED BY FURTHER NOTAM",
+        "expired": false
+      },
+      {
+        "id": "J1988/26",
+        "q_code": "QMMAW",
+        "priority": "5",
+        "eff_from": "Sep 30, 2026 15:00 UTC",
+        "expires": "Oct 28, 2026 15:00 UTC",
+        "desc": "TWY CL MARKING FOR N2 PARTLY ERASED TWY CL MARKING FOR F,T(INT OF",
+        "expired": false
+      },
+      {
+        "id": "J1989/26",
+        "q_code": "QMMAW",
+        "priority": "5",
+        "eff_from": "Sep 30, 2026 15:00 UTC",
+        "expires": "Oct 28, 2026 15:00 UTC",
+        "desc": "SURFACE PAINTED DIRECTION SIGN FOR N(INT OF N2) ERASED TWY SIDE STRIPE MARKING FOR F ERASED RMK: (1)REF AIP SUP 212/26 ITEM TWY:16,49 (2)THE EXACT TIME OF NEXT PERIOD WILL BE NOTIFIED BY FURTHER NOTAM",
+        "expired": false
+      },
+      {
+        "id": "J1990/26",
+        "q_code": "QMNLC",
+        "priority": "5",
+        "eff_from": "Sep 30, 2026 15:00 UTC",
+        "expires": "Oct 28, 2026 15:00 UTC",
+        "desc": "COMPASS AREA CLSD RMK: (1)REF AIP SUP 212/26 ITEM APRON:C (2)THE EXACT TIME OF NEXT PERIOD WILL BE NOTIFIED BY FURTHER NOTAM",
+        "expired": false
+      },
+      {
+        "id": "J1991/26",
+        "q_code": "QMPLC",
+        "priority": "5",
+        "eff_from": "Sep 30, 2026 15:00 UTC",
+        "expires": "Oct 28, 2026 15:00 UTC",
+        "desc": "SPOT 402,23 CLSD RMK: (1)REF AIP SUP 212/26 ITEM APRON:D,E (2)THE EXACT TIME OF NEXT PERIOD WILL BE NOTIFIED BY FURTHER NOTAM",
+        "expired": false
+      },
+      {
+        "id": "J1992/26",
+        "q_code": "QMPXX",
+        "priority": "5",
+        "eff_from": "Sep 30, 2026 15:00 UTC",
+        "expires": "Oct 28, 2026 15:00 UTC",
+        "desc": "SPOT 401,47 RELOCATED RMK: (1)REF AIP SUP 212/26 ITEM APRON:5,7 (2)THE EXACT TIME OF NEXT PERIOD WILL BE NOTIFIED BY FURTHER NOTAM",
+        "expired": false
+      }
+    ]
+  },
+  "RKSI": {
+    "fetched_at": "2026-10-15 14:17 UTC",
+    "notams": [
+      {
+        "id": "A1476/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 15, 2026 15:00 UTC",
+        "expires": "Oct 15, 2026 18:00 UTC",
+        "desc": "TXL R1 BTN TWY A15 AND TXL RE CLSD DUE TO WIP RMK : TWY A15 AND TXL RE NML OPS",
+        "expired": false
+      },
+      {
+        "id": "A1472/26",
+        "q_code": "QMXLC",
+        "priority": "5",
+        "eff_from": "Oct 16, 2026 15:00 UTC",
+        "expires": "Oct 16, 2026 17:00 UTC",
+        "desc": "TXL BTN ACFT STAND NR 701 AND NR 702 CLSD DUE TO WIP",
+        "expired": false
+      },
+      {
+        "id": "Z0688/26",
+        "q_code": "QFATT",
+        "priority": "5",
+        "eff_from": "Oct 28, 2026 16:00 UTC",
+        "expires": "Nov 11, 2026 16:00 UTC",
+        "desc": "TRIGGER NOTAM - PERM AIRAC AIP AMDT 10/26 WEF 1600 UTC 28 OCT 2026 -ESTABLISHMENT OF EMB(ELECTRONIC MESSAGE BOARD) AND DE-ICING PROCEDURE. -INFORMATION OF PROCEDURES FOR START-UP AND PUSH BACK, DE-ICING OPERATIONAL PROCEDURES.",
+        "expired": false
+      }
+    ]
+  }
+}

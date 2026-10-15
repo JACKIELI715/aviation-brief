@@ -1,0 +1,1983 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AvBrief">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0e14">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+<title>Aviation Briefing — WX / TAF / NOTAM</title>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('/sw.js').catch(function () {});
+  });
+}
+</script>
+<style>
+  :root {
+    --bg: #0a0e14; --bg2: #12171f; --bg3: #1a2030;
+    --ink: #e6edf3; --muted: #8b949e; --rule: #212a35;
+    --accent: #58a6ff; --accent2: #3fb950; --red: #f85149;
+    --orange: #d2991d; --gray: #484f58; --radius: 6px;
+    --sat: env(safe-area-inset-top, 0px);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans CJK SC', system-ui, sans-serif;
+    background: var(--bg); color: var(--ink); min-height: 100vh;
+    line-height: 1.55; font-size: 14px; -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 780px; margin: 0 auto; padding: calc(20px + var(--sat)) 16px 40px; }
+  .header {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    padding: 14px 0 18px; border-bottom: 1px solid var(--rule); margin-bottom: 20px;
+  }
+  .header h1 { font-size: 19px; font-weight: 700; letter-spacing: 0.06em; }
+  .mode-badge {
+    font-size: 10px; padding: 4px 10px; border-radius: 4px; letter-spacing: 0.04em;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .mode-badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .mode-server { background: rgba(63,185,80,0.12); color: var(--accent2); border: 1px solid rgba(63,185,80,0.3); }
+  .mode-server .dot { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+  .mode-local { background: rgba(210,153,29,0.12); color: var(--orange); border: 1px solid rgba(210,153,29,0.3); }
+  .mode-local .dot { background: var(--orange); }
+
+  /* Settings */
+  .gear-btn {
+    background: var(--bg2); border: 1px solid var(--rule); color: var(--muted);
+    width: 34px; height: 30px; border-radius: var(--radius); font-size: 15px;
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    transition: all 0.15s; flex-shrink: 0;
+  }
+  .gear-btn:active, .gear-btn.on { color: var(--accent); border-color: var(--accent); }
+  .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .settings-card {
+    background: var(--bg2); border: 1px solid var(--accent); border-radius: var(--radius);
+    padding: 16px; margin-bottom: 16px; display: none;
+  }
+  .settings-card.open { display: block; }
+  .settings-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+  .settings-group { margin-bottom: 14px; }
+  .settings-group:last-child { margin-bottom: 0; }
+  .settings-group > .group-label { font-size: 12px; font-weight: 700; margin-bottom: 8px; color: var(--ink); }
+  .settings-group label.radio-opt {
+    display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted);
+    padding: 6px 8px; border-radius: 4px; cursor: pointer; margin: 0;
+  }
+  .settings-group label.radio-opt:active { background: var(--bg3); }
+  .settings-group label.radio-opt.checked { color: var(--accent); }
+  .settings-group input[type="radio"] { accent-color: var(--accent); width: 15px; height: 15px; flex-shrink: 0; }
+
+  .form-card { background: var(--bg2); border: 1px solid var(--rule); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .form-card-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; }
+  .form-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; margin-bottom: 14px; align-items: end; }
+  .form-grid .arrow { text-align: center; color: var(--muted); font-size: 22px; padding-bottom: 12px; align-self: end; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+  .form-group input {
+    background: var(--bg3); border: 1px solid var(--rule); color: var(--ink);
+    padding: 12px; border-radius: var(--radius); font-size: 16px;
+    font-family: 'SF Mono', 'Fira Code', monospace; transition: border-color 0.2s; width: 100%;
+  }
+  .form-group input:focus { outline: none; border-color: var(--accent); }
+  .form-row { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+  .form-row .form-group { flex: 1; min-width: 100px; }
+  .btn {
+    background: var(--accent); color: #fff; border: none; width: 100%;
+    padding: 14px 32px; border-radius: var(--radius); font-size: 16px; font-weight: 600;
+    cursor: pointer; letter-spacing: 0.02em;
+  }
+  .btn:active { opacity: 0.85; }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-ghost {
+    background: var(--bg2); color: var(--muted); border: 1px solid var(--rule);
+    width: 100%; padding: 14px 18px; border-radius: var(--radius);
+    font-size: 14px; font-weight: 600; cursor: pointer; letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .btn-ghost:active { opacity: 0.85; }
+  .btn-ghost:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .quick-routes { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .quick-routes button {
+    background: var(--bg2); border: 1px solid var(--rule); color: var(--muted);
+    padding: 7px 12px; border-radius: 4px; font-size: 11px; cursor: pointer;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+
+  /* Manual paste */
+  .paste-card { background: var(--bg2); border: 1px dashed var(--rule); border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; }
+  .paste-toggle {
+    width: 100%; background: none; border: none; color: var(--muted); text-align: left;
+    padding: 12px 16px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px;
+  }
+  .paste-toggle:active { color: var(--accent); }
+  .paste-body { display: none; padding: 0 16px 16px; }
+  .paste-body.open { display: block; }
+  .paste-body textarea {
+    width: 100%; min-height: 90px; background: var(--bg3); border: 1px solid var(--rule);
+    color: var(--ink); border-radius: var(--radius); padding: 10px; font-size: 12px;
+    font-family: 'SF Mono', 'Fira Code', monospace; resize: vertical;
+  }
+  .paste-body textarea:focus { outline: none; border-color: var(--accent); }
+  .paste-hint { font-size: 11px; color: var(--gray); margin: 6px 0 10px; line-height: 1.5; }
+
+  .loading { display: none; text-align: center; padding: 48px 0; }
+  .loading.active { display: block; }
+  .spinner { width: 36px; height: 36px; border: 3px solid var(--rule); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { color: var(--muted); font-size: 13px; }
+
+  .error-box { display: none; color: var(--red); padding: 12px 16px; background: rgba(248,81,73,0.08); border: 1px solid rgba(248,81,73,0.2); border-radius: var(--radius); margin-bottom: 16px; font-size: 13px; }
+  .error-box.active { display: block; }
+
+  .result { display: none; }
+  .result.active { display: block; }
+  .flight-line {
+    font-family: 'SF Mono', 'Fira Code', monospace; font-size: 14px; font-weight: 700;
+    padding: 12px 16px; background: var(--bg2); border-radius: var(--radius); margin-bottom: 18px;
+    border-left: 3px solid var(--accent); display: flex; align-items: center; gap: 8px;
+    overflow-x: auto; white-space: nowrap; flex-wrap: wrap;
+  }
+  .section { margin-bottom: 16px; }
+  .section-header {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.08em; padding: 6px 0; border-bottom: 1px solid var(--rule); margin-bottom: 8px;
+  }
+  .section-header .count { font-weight: 400; font-size: 10px; margin-left: auto; }
+  .section-line {
+    font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; padding: 9px 12px;
+    border-radius: 4px; margin-bottom: 4px; line-height: 1.65; word-break: break-all;
+  }
+  .section-line.risk-high { background: rgba(248,81,73,0.1); border-left: 2px solid var(--red); }
+  .section-line.risk-med  { background: rgba(210,153,29,0.1); border-left: 2px solid var(--orange); }
+  .section-line.risk-low  { background: var(--bg2); border-left: 2px solid var(--gray); color: var(--muted); }
+  .section-line.risk-gnd  { background: rgba(88,166,255,0.06); border-left: 2px solid var(--accent); }
+  .section-line.risk-ck   { background: rgba(63,185,80,0.06); border-left: 2px solid var(--accent2); }
+  .section-line .bold { font-weight: 700; color: var(--ink); }
+  .section-line .tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 3px; margin-right: 8px; vertical-align: 1px; }
+  .tag-high { background: var(--red); color: #fff; }
+  .tag-med  { background: var(--orange); color: #000; }
+  .tag-low  { background: var(--gray); color: var(--muted); }
+  .tag-gnd  { background: var(--accent); color: #fff; }
+  .tag-ck   { background: var(--accent2); color: #000; }
+  .tag-go   { background: var(--accent2); color: #000; }
+  .tag-nogo { background: var(--red); color: #fff; }
+
+  .conclusion { margin-top: 20px; padding: 16px; border-radius: var(--radius); border: 2px solid var(--rule); background: var(--bg2); }
+  .conclusion.go   { border-color: var(--accent2); background: rgba(63,185,80,0.06); }
+  .conclusion.nogo { border-color: var(--red); background: rgba(248,81,73,0.08); }
+  .conclusion .conclusion-header { font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+  .conclusion .conclusion-header.go   { color: var(--accent2); }
+  .conclusion .conclusion-header.nogo { color: var(--red); }
+  .conclusion .conclusion-body { font-size: 13px; line-height: 1.7; }
+  .conclusion .conclusion-body .item { padding: 3px 0 3px 14px; position: relative; }
+  .conclusion .conclusion-body .item::before { content: '•'; position: absolute; left: 0; color: var(--muted); }
+
+  .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--rule); text-align: center; font-size: 11px; color: var(--gray); }
+
+  @media (max-width: 560px) {
+    .form-grid { grid-template-columns: 1fr 1fr; }
+    .form-grid .arrow { display: none; }
+    .container { padding: calc(12px + var(--sat)) 12px 40px; }
+    .section-line { font-size: 11px; }
+  }
+  @media print {
+    body { background: #fff; color: #000; }
+    .form-card, .quick-routes, .paste-card, .footer { display: none; }
+    .result { display: block !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>AVIATION BRIEFING</h1>
+    <div class="header-right">
+      <span class="mode-badge mode-local" id="mode-badge"><span class="dot"></span><span id="mode-text">检测中…</span></span>
+      <button class="gear-btn" id="gear-btn" onclick="toggleSettings()" title="数据来源设置">⚙</button>
+    </div>
+  </div>
+
+  <!-- 数据来源设置 -->
+  <div class="settings-card" id="settings-card">
+    <div class="settings-title">数据来源设置</div>
+    <div class="settings-group">
+      <div class="group-label">NOTAM 来源</div>
+      <label class="radio-opt"><input type="radio" name="notam_mode" value="merge" onchange="onSettingChange()"><span>合并 — 在线/缓存 + 手动粘贴（同号通告以粘贴为准）</span></label>
+      <label class="radio-opt"><input type="radio" name="notam_mode" value="auto" onchange="onSettingChange()"><span>仅自动 — 忽略粘贴内容</span></label>
+      <label class="radio-opt"><input type="radio" name="notam_mode" value="manual" onchange="onSettingChange()"><span>仅手动粘贴</span></label>
+    </div>
+    <div class="settings-group">
+      <div class="group-label">TAF 来源</div>
+      <label class="radio-opt"><input type="radio" name="taf_mode" value="auto" onchange="onSettingChange()"><span>自动 — 在线优先，失败时用粘贴内容</span></label>
+      <label class="radio-opt"><input type="radio" name="taf_mode" value="manual" onchange="onSettingChange()"><span>仅手动粘贴</span></label>
+    </div>
+  </div>
+
+  <div class="quick-routes">
+    <button onclick="quickFill('ZSYW','ZGGG','1200','1330')">ZSYW→ZGGG</button>
+    <button onclick="quickFill('ZGGG','WMKK','0800','1200')">ZGGG→WMKK</button>
+    <button onclick="quickFill('ZSPD','ZGGG','1000','1230')">ZSPD→ZGGG</button>
+    <button onclick="quickFill('ZBAA','ZSPD','0800','1000')">ZBAA→ZSPD</button>
+    <button onclick="quickFill('ZGGG','VTBS','1000','1300')">ZGGG→VTBS</button>
+    <button onclick="quickFill('ZSPD','RJTT','0900','1130')">ZSPD→RJTT</button>
+  </div>
+
+  <div class="form-card">
+    <div class="form-card-title">Flight Information</div>
+    <div class="form-grid">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="form-group">
+          <label>DEP 起飞机场</label>
+          <input type="text" id="dep" placeholder="ICAO" maxlength="4" autocomplete="off" style="text-transform:uppercase">
+        </div>
+        <div class="form-group">
+          <label>DEP TIME 起飞 (BJT)</label>
+          <input type="text" id="dep_time" placeholder="HHMM" maxlength="4" inputmode="numeric">
+        </div>
+      </div>
+      <div class="arrow">→</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="form-group">
+          <label>ARR 落地机场</label>
+          <input type="text" id="arr" placeholder="ICAO" maxlength="4" autocomplete="off" style="text-transform:uppercase">
+        </div>
+        <div class="form-group">
+          <label>ARR TIME 落地 (BJT)</label>
+          <input type="text" id="arr_time" placeholder="HHMM" maxlength="4" inputmode="numeric">
+        </div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="max-width:180px;">
+        <label>DATE 日期</label>
+        <input type="date" id="date">
+      </div>
+      <div class="form-group" style="flex:0 0 auto;">
+        <button class="btn" id="btn-submit" onclick="fetchBrief()">GET BRIEF</button>
+      </div>
+      <div class="form-group" style="flex:0 0 auto;">
+        <button class="btn-ghost" id="btn-refresh" onclick="refreshNotams()" title="强制重新抓取NOTAM并写入本地缓存">↻ 刷新NOTAM缓存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 手动粘贴 (JEP Pro) -->
+  <div class="paste-card">
+    <button class="paste-toggle" onclick="togglePaste()">▸ 手动粘贴 TAF / NOTAM（可选，来自 JEP Pro 等软件）</button>
+    <div class="paste-body" id="paste-body">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>ARR TAF 粘贴</label>
+        <textarea id="manual_taf" placeholder="TAF WMKK 291100Z 2912/3018 14004KT 6000 HZ FEW030&#10;TEMPO 2918/3002 4000 RA BKN020 ..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>NOTAM 粘贴（DEP 或 ARR，自动识别机场）</label>
+        <textarea id="manual_notam" placeholder="A2923/26 NOTAMN&#10;Q) WMKK/QMXLC/IV/NBO/A/000/999/&#10;A) WMKK&#10;B) 2609250000&#10;C) 2610312359&#10;E) TWY E BTN INT E2 AND INT E4 CLSD&#10;&#10;（可同时粘贴多条，空行分隔）"></textarea>
+      </div>
+      <div class="paste-hint">从 JEP Pro 复制通告原文粘贴，系统自动解析、分类并按翼展≤36m(C类)标准评估。支持 ICAO 格式（A)/C)/E)）和 JEP 中文导出。默认「合并」：粘贴的同号通告覆盖在线/缓存；⚙ 设置切「仅手动粘贴」= 强制以粘贴为准（忽略其他来源）；未能识别的文本会在结果末端列出供人工核对。</div>
+      <div class="paste-hint" id="paste_feedback" style="margin-top:6px;font-weight:600;"></div>
+    </div>
+  </div>
+
+  <div class="error-box" id="error"></div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loading-text">获取 WX / TAF / NOTAM 数据中…</div>
+  </div>
+
+  <div class="result" id="result"></div>
+
+  <div class="footer">
+    <span>WX: Open-Meteo · TAF: AviationWeather · NOTAM: FAA NOTAM Search</span>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════ 机场数据库 ═══════════════════════
+const AIRPORTS = {
+  'RCTP': {lat:25.0777, lon:121.2328, name:'台北桃园'},
+  'RJBB': {lat:34.432, lon:135.2304, name:'大阪关西'},
+  'RJTT': {lat:35.5494, lon:139.7798, name:'东京羽田'},
+  'RKSI': {lat:37.4602, lon:126.4407, name:'首尔仁川'},
+  'VHHH': {lat:22.308, lon:113.9185, name:'香港'},
+  'VMMC': {lat:22.1496, lon:113.5924, name:'澳门'},
+  'VTBS': {lat:13.6811, lon:100.7473, name:'曼谷素万那普'},
+  'WMKK': {lat:2.7456, lon:101.7099, name:'吉隆坡'},
+  'WSSS': {lat:1.3592, lon:103.9894, name:'新加坡樟宜'},
+  'ZBAA': {lat:40.0773, lon:116.5967, name:'北京首都'},
+  'ZBAD': {lat:39.5013, lon:116.414, name:'北京大兴'},
+  'ZBCD': {lat:41.1225, lon:118.0739, name:'承德'},
+  'ZBCF': {lat:42.1597, lon:118.841, name:'赤峰'},
+  'ZBCZ': {lat:36.2475, lon:113.126, name:'长治'},
+  'ZBDH': {lat:39.6664, lon:119.0614, name:'秦皇岛北戴河'},
+  'ZBDS': {lat:39.4935, lon:109.8599, name:'鄂尔多斯'},
+  'ZBDT': {lat:40.0614, lon:113.4805, name:'大同'},
+  'ZBER': {lat:43.4241, lon:112.0911, name:'二连浩特赛乌苏'},
+  'ZBES': {lat:47.3106, lon:119.9117, name:'阿尔山'},
+  'ZBHD': {lat:36.5248, lon:114.4241, name:'邯郸'},
+  'ZBHH': {lat:40.8497, lon:111.8246, name:'呼和浩特'},
+  'ZBHZ': {lat:45.4872, lon:119.4072, name:'霍林郭勒'},
+  'ZBLA': {lat:49.2086, lon:119.8223, name:'海拉尔'},
+  'ZBLF': {lat:36.1326, lon:111.6412, name:'临汾'},
+  'ZBLL': {lat:37.6833, lon:111.1428, name:'吕梁'},
+  'ZBMZ': {lat:49.5667, lon:117.33, name:'满洲里'},
+  'ZBOW': {lat:40.56, lon:109.997, name:'包头东河'},
+  'ZBSG': {lat:39.2732, lon:112.6916, name:'朔州滋润'},
+  'ZBSJ': {lat:38.2807, lon:114.697, name:'石家庄'},
+  'ZBSN': {lat:39.7178, lon:118.0026, name:'唐山三女河'},
+  'ZBTJ': {lat:39.1244, lon:117.346, name:'天津'},
+  'ZBTL': {lat:43.5567, lon:122.2, name:'通辽'},
+  'ZBUC': {lat:41.1303, lon:113.1073, name:'乌兰察布'},
+  'ZBUH': {lat:39.7934, lon:106.7993, name:'乌海'},
+  'ZBUL': {lat:46.1953, lon:122.0083, name:'乌兰浩特'},
+  'ZBUT': {lat:41.6944, lon:108.3784, name:'乌拉特中旗'},
+  'ZBXH': {lat:43.9156, lon:115.964, name:'锡林浩特'},
+  'ZBXZ': {lat:38.5975, lon:112.9692, name:'忻州'},
+  'ZBYC': {lat:35.1178, lon:111.034, name:'运城关公'},
+  'ZBYN': {lat:37.7469, lon:112.628, name:'太原'},
+  'ZBYZ': {lat:40.9264, lon:107.7409, name:'巴彦淖尔'},
+  'ZBZJ': {lat:40.7387, lon:114.9334, name:'张家口宁远'},
+  'ZBZL': {lat:47.8659, lon:122.7687, name:'扎兰屯'},
+  'ZGBH': {lat:21.5387, lon:109.2937, name:'北海'},
+  'ZGBS': {lat:23.7206, lon:106.96, name:'百色右江'},
+  'ZGCD': {lat:28.9189, lon:111.64, name:'常德'},
+  'ZGCJ': {lat:27.4431, lon:109.7047, name:'怀化'},
+  'ZGCZ': {lat:25.7534, lon:112.8454, name:'郴州'},
+  'ZGDY': {lat:29.1047, lon:110.4428, name:'张家界荷花'},
+  'ZGFS': {lat:23.0825, lon:113.0708, name:'佛山'},
+  'ZGGG': {lat:23.3924, lon:113.299, name:'广州白云'},
+  'ZGHA': {lat:28.1892, lon:113.22, name:'长沙黄花'},
+  'ZGHC': {lat:24.8043, lon:107.7108, name:'河池'},
+  'ZGHY': {lat:26.7221, lon:112.618, name:'衡阳'},
+  'ZGHZ': {lat:23.05, lon:114.6, name:'惠州'},
+  'ZGKL': {lat:25.2198, lon:110.0396, name:'桂林'},
+  'ZGLG': {lat:26.3387, lon:111.61, name:'永州'},
+  'ZGMX': {lat:24.2634, lon:116.0979, name:'梅州'},
+  'ZGNN': {lat:22.5981, lon:108.1819, name:'南宁吴圩'},
+  'ZGOW': {lat:23.552, lon:116.5033, name:'揭阳'},
+  'ZGSD': {lat:22.0064, lon:113.376, name:'珠海金湾'},
+  'ZGSY': {lat:26.8061, lon:110.641, name:'邵阳'},
+  'ZGSZ': {lat:22.6395, lon:113.8033, name:'深圳宝安'},
+  'ZGWZ': {lat:23.4032, lon:111.0933, name:'梧州'},
+  'ZGXX': {lat:28.4972, lon:109.5218, name:'湘西'},
+  'ZGYL': {lat:22.433, lon:110.12, name:'玉林'},
+  'ZGYY': {lat:29.3117, lon:113.2816, name:'岳阳'},
+  'ZGZH': {lat:24.2075, lon:109.391, name:'柳州'},
+  'ZGZJ': {lat:21.4817, lon:110.5903, name:'湛江'},
+  'ZHCC': {lat:34.5265, lon:113.8492, name:'郑州'},
+  'ZHEC': {lat:30.3412, lon:115.0393, name:'鄂州'},
+  'ZHES': {lat:30.3203, lon:109.485, name:'恩施'},
+  'ZHHH': {lat:30.7748, lon:114.2137, name:'武汉'},
+  'ZHJZ': {lat:30.2928, lon:112.4485, name:'荆州'},
+  'ZHLY': {lat:34.7411, lon:112.388, name:'洛阳'},
+  'ZHNY': {lat:32.9827, lon:112.6175, name:'南阳'},
+  'ZHQQ': {lat:35.8708, lon:114.4619, name:'安阳'},
+  'ZHSN': {lat:31.626, lon:110.34, name:'神农架'},
+  'ZHSY': {lat:32.5929, lon:110.9063, name:'十堰'},
+  'ZHXF': {lat:32.1522, lon:112.2917, name:'襄阳'},
+  'ZHXY': {lat:32.5408, lon:114.0791, name:'信阳明港'},
+  'ZHYC': {lat:30.5541, lon:111.4826, name:'宜昌'},
+  'ZJHK': {lat:19.9349, lon:110.459, name:'海口'},
+  'ZJQH': {lat:19.141, lon:110.4528, name:'琼海'},
+  'ZJSY': {lat:18.3029, lon:109.412, name:'三亚'},
+  'ZLAK': {lat:32.757, lon:108.8734, name:'安康'},
+  'ZLDH': {lat:40.162, lon:94.8128, name:'敦煌'},
+  'ZLDL': {lat:37.1253, lon:97.2687, name:'德令哈'},
+  'ZLGL': {lat:34.4181, lon:100.3011, name:'果洛玛沁'},
+  'ZLGM': {lat:36.4006, lon:94.7861, name:'格尔木'},
+  'ZLGY': {lat:36.0789, lon:106.2169, name:'固原'},
+  'ZLHB': {lat:38.0081, lon:100.6451, name:'海北祁连'},
+  'ZLHX': {lat:38.2016, lon:90.8378, name:'茫崖花土沟'},
+  'ZLHZ': {lat:33.1335, lon:107.2038, name:'汉中西关'},
+  'ZLIC': {lat:38.3228, lon:106.3932, name:'银川河东'},
+  'ZLJC': {lat:38.5422, lon:102.3483, name:'金昌'},
+  'ZLJQ': {lat:39.8591, lon:98.3393, name:'嘉峪关'},
+  'ZLLL': {lat:36.5152, lon:103.62, name:'兰州中川'},
+  'ZLLN': {lat:33.7899, lon:105.79, name:'陇南'},
+  'ZLQY': {lat:35.8026, lon:107.5989, name:'庆阳'},
+  'ZLTS': {lat:34.5601, lon:105.8603, name:'天水麦积山'},
+  'ZLXH': {lat:34.819, lon:102.6223, name:'甘南夏河'},
+  'ZLXN': {lat:36.5277, lon:102.0402, name:'西宁'},
+  'ZLXY': {lat:34.4422, lon:108.7624, name:'西安咸阳'},
+  'ZLYA': {lat:36.4794, lon:109.4641, name:'延安南泥湾'},
+  'ZLYL': {lat:38.3597, lon:109.5909, name:'榆林'},
+  'ZLYS': {lat:32.8364, lon:97.0364, name:'玉树'},
+  'ZLZW': {lat:37.5731, lon:105.1545, name:'中卫'},
+  'ZLZY': {lat:38.8019, lon:100.675, name:'张掖甘州'},
+  'ZPBS': {lat:25.0533, lon:99.1683, name:'保山'},
+  'ZPCW': {lat:23.2763, lon:99.3732, name:'沧源'},
+  'ZPDL': {lat:25.6494, lon:100.319, name:'大理'},
+  'ZPDQ': {lat:27.7936, lon:99.6772, name:'迪庆香格里拉'},
+  'ZPJH': {lat:21.9746, lon:100.7622, name:'景洪'},
+  'ZPJM': {lat:22.4177, lon:99.784, name:'澜沧'},
+  'ZPLC': {lat:23.7381, lon:100.025, name:'临沧'},
+  'ZPLJ': {lat:26.6775, lon:100.2449, name:'丽江三义'},
+  'ZPMS': {lat:24.4011, lon:98.5317, name:'芒市'},
+  'ZPPP': {lat:25.1103, lon:102.9367, name:'昆明'},
+  'ZPSM': {lat:22.7933, lon:100.959, name:'思茅'},
+  'ZPWS': {lat:23.5583, lon:104.3255, name:'文山'},
+  'ZSAM': {lat:24.5439, lon:118.1275, name:'厦门高崎'},
+  'ZSAQ': {lat:30.5822, lon:117.05, name:'安庆'},
+  'ZSCG': {lat:31.9205, lon:119.7755, name:'常州'},
+  'ZSCN': {lat:28.8648, lon:115.9027, name:'南昌'},
+  'ZSDY': {lat:37.5014, lon:118.7899, name:'东营'},
+  'ZSFY': {lat:32.8822, lon:115.7344, name:'阜阳'},
+  'ZSFZ': {lat:25.9293, lon:119.6725, name:'福州'},
+  'ZSGZ': {lat:25.8533, lon:114.7789, name:'赣州'},
+  'ZSHC': {lat:30.2361, lon:120.4289, name:'杭州萧山'},
+  'ZSHZ': {lat:35.213, lon:115.7367, name:'菏泽'},
+  'ZSJD': {lat:29.3386, lon:117.176, name:'景德镇'},
+  'ZSJG': {lat:35.6474, lon:116.7433, name:'济宁大安'},
+  'ZSJJ': {lat:29.4769, lon:115.8011, name:'九江'},
+  'ZSJN': {lat:36.8572, lon:117.216, name:'济南'},
+  'ZSJU': {lat:28.9661, lon:118.8988, name:'衢州'},
+  'ZSLG': {lat:34.4141, lon:119.179, name:'连云港'},
+  'ZSLO': {lat:25.6759, lon:116.7459, name:'龙岩'},
+  'ZSLQ': {lat:28.5622, lon:121.429, name:'台州'},
+  'ZSLY': {lat:35.0529, lon:118.4118, name:'临沂'},
+  'ZSNB': {lat:29.8267, lon:121.462, name:'宁波'},
+  'ZSNJ': {lat:31.735, lon:118.8659, name:'南京'},
+  'ZSNT': {lat:32.0736, lon:120.9801, name:'南通'},
+  'ZSOF': {lat:31.9878, lon:116.9769, name:'合肥'},
+  'ZSPD': {lat:31.1434, lon:121.805, name:'上海浦东'},
+  'ZSQD': {lat:36.362, lon:120.0882, name:'青岛'},
+  'ZSQZ': {lat:24.7959, lon:118.5886, name:'泉州'},
+  'ZSRZ': {lat:35.405, lon:119.3244, name:'日照'},
+  'ZSSH': {lat:33.7927, lon:119.1267, name:'淮安涟水'},
+  'ZSSM': {lat:26.4263, lon:117.8336, name:'三明'},
+  'ZSSR': {lat:28.3797, lon:117.9643, name:'上饶'},
+  'ZSSS': {lat:31.1981, lon:121.3343, name:'上海虹桥'},
+  'ZSTX': {lat:29.7333, lon:118.256, name:'黄山'},
+  'ZSWA': {lat:31.1045, lon:118.6669, name:'芜湖'},
+  'ZSWF': {lat:36.6467, lon:119.119, name:'潍坊'},
+  'ZSWH': {lat:37.1871, lon:122.229, name:'威海'},
+  'ZSWX': {lat:31.497, lon:120.4304, name:'无锡'},
+  'ZSWY': {lat:27.7019, lon:118.001, name:'武夷山'},
+  'ZSWZ': {lat:27.9106, lon:120.8535, name:'温州永强'},
+  'ZSXZ': {lat:34.0591, lon:117.5553, name:'徐州观音'},
+  'ZSYA': {lat:32.5634, lon:119.7198, name:'扬州'},
+  'ZSYC': {lat:27.8025, lon:114.3062, name:'宜春明月山'},
+  'ZSYN': {lat:33.4283, lon:120.2054, name:'盐城'},
+  'ZSYT': {lat:37.6597, lon:120.9781, name:'烟台'},
+  'ZSYW': {lat:29.3421, lon:120.0312, name:'义乌'},
+  'ZSZS': {lat:29.9339, lon:122.3623, name:'舟山'},
+  'ZUAL': {lat:32.0979, lon:80.054, name:'阿里'},
+  'ZUAS': {lat:26.2606, lon:105.8733, name:'安顺'},
+  'ZUBD': {lat:30.5536, lon:97.1083, name:'昌都'},
+  'ZUBJ': {lat:27.2671, lon:105.4721, name:'毕节'},
+  'ZUCK': {lat:29.7123, lon:106.6519, name:'重庆'},
+  'ZUDA': {lat:31.0488, lon:107.4356, name:'达州金垭'},
+  'ZUDC': {lat:29.3163, lon:100.0603, name:'稻城'},
+  'ZUDX': {lat:31.1302, lon:107.4295, name:'达州'},
+  'ZUGU': {lat:32.3903, lon:105.6946, name:'广元'},
+  'ZUGY': {lat:26.5418, lon:106.804, name:'贵阳'},
+  'ZUGZ': {lat:31.7575, lon:99.5542, name:'甘孜'},
+  'ZUJZ': {lat:32.8533, lon:103.6822, name:'九寨黄龙'},
+  'ZUKD': {lat:30.1425, lon:101.7387, name:'康定'},
+  'ZUKJ': {lat:26.972, lon:107.988, name:'凯里'},
+  'ZULB': {lat:25.4525, lon:107.9617, name:'荔波'},
+  'ZULS': {lat:29.298, lon:90.912, name:'拉萨'},
+  'ZULZ': {lat:29.0304, lon:105.4684, name:'泸州'},
+  'ZUMT': {lat:27.9618, lon:106.4354, name:'遵义'},
+  'ZUMY': {lat:31.4281, lon:104.741, name:'绵阳'},
+  'ZUNC': {lat:30.7981, lon:106.1642, name:'南充'},
+  'ZUNP': {lat:26.3222, lon:109.1499, name:'黎平'},
+  'ZUNZ': {lat:29.3033, lon:94.3353, name:'林芝米林'},
+  'ZUPS': {lat:26.6094, lon:104.979, name:'六盘水'},
+  'ZUQJ': {lat:29.5133, lon:108.8311, name:'黔江'},
+  'ZURK': {lat:29.3509, lon:89.2992, name:'日喀则'},
+  'ZUSH': {lat:28.4224, lon:92.3481, name:'山南隆子'},
+  'ZUTC': {lat:24.9381, lon:98.4858, name:'腾冲'},
+  'ZUTF': {lat:30.3125, lon:104.4413, name:'成都天府'},
+  'ZUTR': {lat:27.8833, lon:109.3089, name:'铜仁'},
+  'ZUUU': {lat:30.5583, lon:103.946, name:'成都双流'},
+  'ZUWL': {lat:29.4657, lon:107.6937, name:'武隆'},
+  'ZUWS': {lat:31.069, lon:109.709, name:'巫山'},
+  'ZUWX': {lat:30.8017, lon:108.433, name:'万州五桥'},
+  'ZUXC': {lat:27.9891, lon:102.184, name:'西昌'},
+  'ZUYB': {lat:28.8584, lon:104.5262, name:'宜宾'},
+  'ZUYI': {lat:25.0834, lon:104.9608, name:'兴义'},
+  'ZUZH': {lat:26.54, lon:101.7985, name:'攀枝花保安营'},
+  'ZUZY': {lat:27.8107, lon:107.2472, name:'遵义'},
+  'ZWAK': {lat:41.2625, lon:80.2917, name:'阿克苏'},
+  'ZWAL': {lat:40.4347, lon:81.2621, name:'阿拉尔'},
+  'ZWAT': {lat:47.7499, lon:88.0858, name:'阿勒泰'},
+  'ZWBL': {lat:44.8955, lon:82.3001, name:'博乐'},
+  'ZWCM': {lat:38.2345, lon:85.4655, name:'且末'},
+  'ZWFY': {lat:46.8042, lon:89.512, name:'富蕴'},
+  'ZWHM': {lat:42.8414, lon:93.6692, name:'哈密'},
+  'ZWHZ': {lat:44.2421, lon:85.8905, name:'石河子'},
+  'ZWKC': {lat:41.6779, lon:82.8729, name:'库车龟兹'},
+  'ZWKL': {lat:41.615, lon:86.1408, name:'库尔勒'},
+  'ZWKM': {lat:45.4665, lon:84.9527, name:'克拉玛依'},
+  'ZWKN': {lat:48.2223, lon:86.9959, name:'布尔津'},
+  'ZWNL': {lat:43.4318, lon:83.3786, name:'新源'},
+  'ZWRQ': {lat:38.9747, lon:88.0083, name:'若羌'},
+  'ZWSC': {lat:38.2454, lon:77.0561, name:'莎车'},
+  'ZWSH': {lat:39.5423, lon:76.0202, name:'喀什'},
+  'ZWTC': {lat:46.6725, lon:83.3408, name:'塔城'},
+  'ZWTL': {lat:43.0308, lon:89.0987, name:'吐鲁番'},
+  'ZWTN': {lat:37.0385, lon:79.8649, name:'和田'},
+  'ZWWW': {lat:43.9136, lon:87.4794, name:'乌鲁木齐地窝堡'},
+  'ZWYN': {lat:43.9558, lon:81.3303, name:'伊宁'},
+  'ZWYT': {lat:36.8085, lon:81.7827, name:'于田'},
+  'ZYAS': {lat:41.1053, lon:122.854, name:'鞍山'},
+  'ZYBA': {lat:45.5053, lon:123.0197, name:'白城'},
+  'ZYBS': {lat:42.0669, lon:127.6022, name:'白山'},
+  'ZYCC': {lat:43.9962, lon:125.685, name:'长春'},
+  'ZYCH': {lat:39.2664, lon:122.667, name:'长海'},
+  'ZYCY': {lat:41.5381, lon:120.435, name:'朝阳'},
+  'ZYDD': {lat:40.0255, lon:124.2867, name:'丹东'},
+  'ZYDQ': {lat:46.7509, lon:125.1386, name:'大庆'},
+  'ZYDU': {lat:48.441, lon:126.1284, name:'五大连池'},
+  'ZYFY': {lat:48.1972, lon:134.363, name:'抚远'},
+  'ZYHB': {lat:45.6234, lon:126.25, name:'哈尔滨'},
+  'ZYHE': {lat:50.1716, lon:127.3089, name:'黑河'},
+  'ZYJD': {lat:50.3714, lon:124.1175, name:'加格达奇'},
+  'ZYJM': {lat:46.8428, lon:130.4643, name:'佳木斯东郊'},
+  'ZYJS': {lat:47.1082, lon:132.6579, name:'建三江'},
+  'ZYJX': {lat:45.293, lon:131.193, name:'鸡西'},
+  'ZYJZ': {lat:40.936, lon:121.2771, name:'锦州'},
+  'ZYLD': {lat:47.7521, lon:129.0191, name:'伊春林都'},
+  'ZYMD': {lat:44.5252, lon:129.5686, name:'牡丹江'},
+  'ZYMH': {lat:52.9169, lon:122.4228, name:'漠河'},
+  'ZYQQ': {lat:47.23, lon:123.9142, name:'齐齐哈尔三家子'},
+  'ZYSQ': {lat:44.9311, lon:124.5521, name:'松原查干湖'},
+  'ZYTL': {lat:38.9657, lon:121.5385, name:'大连'},
+  'ZYTN': {lat:42.0484, lon:125.734, name:'通化'},
+  'ZYTX': {lat:41.6398, lon:123.4837, name:'沈阳桃仙'},
+  'ZYYJ': {lat:42.8828, lon:129.451, name:'延吉'},
+  'ZYYK': {lat:40.5425, lon:122.3586, name:'营口'},
+};
+
+const WX_NAME = {0:'SKC',1:'FEW',2:'SCT',3:'BKN',45:'FG',48:'FZFG',51:'DZ',53:'DZ',55:'DZ',61:'RA',63:'RA',65:'RA',71:'SN',73:'SN',75:'SN',80:'SHRA',81:'SHRA',82:'SHRA',95:'TS',96:'TSGR'};
+
+// ═══════════════════════ 内嵌 NOTAM 缓存 ═══════════════════════
+// 内嵌 NOTAM 快照（仅本地双击模式回退用；服务器模式改用FAA在线获取）
+const NOTAM_CACHE = {
+"ZGGG": {"fetched_at":"2026-09-29T12:35","notams":[
+{"id":"G3200/26","q_code":"QMXLC","expires":"Oct 16, 2026 15:59 UTC","desc":"TWY Q11 CLSD BTN TWY Q AND TWY Q15."},
+{"id":"G3201/26","q_code":"QMXLT","expires":"Oct 16, 2026 15:59 UTC","desc":"DUE TO OPERATIONAL REQUIREMENTS, TWY B EASTBOUND, TURN RIGHT TO TWY T1 ONLY AVBL FOR ACFT WITH WINGSPAN NOT MORE THAN 36M(ACFT TYPE C AND BELOW)."},
+{"id":"G3021/26","q_code":"QMXLT","expires":"Sep 30, 2026 15:59 UTC","desc":"AD ADD LIMITATION AS FLW,DUE TO WIP: 1.WHEN TAXI IN TWY E,ACFT ARE FORBIDDEN TO TURN LEFT TO TWY J1. 2.WHEN TAXI IN TWY J1,ACFT ARE FORBIDDEN TO TURN RIGHT TO TWY E."},
+{"id":"G3330/26","q_code":"QMXLT","expires":"Oct 28, 2026 15:59 UTC","desc":"FLW TWY ONLY AVBL FOR ACFT WITH WING SPAN NOT MORE THAN 65M: 1.TWY Q15 NORTH OF TWY Q9."},
+{"id":"G3241/26","q_code":"QMPLC","expires":"Sep 30, 2026 15:59 UTC","desc":"PARKING STAND FX14 CLSD DUE TO MAINT."},
+{"id":"G3050/26","q_code":"QMPLC","expires":"Oct 28, 2026 15:59 UTC","desc":"PARKING STAND FX09 CLSD.DUE TO MAINT."},
+{"id":"G3169/26","q_code":"QOBCE","expires":"Jan 13, 2027 15:59 UTC","desc":"ADD NEW TEMPO OBSTACLES WITHIN A CIRCLE WITH A RADIUS OF 15KM (CENTERED ON THE ARP)."},
+{"id":"G3022/26","q_code":"QOBCE","expires":"Jan 13, 2027 15:59 UTC","desc":"ADD NEW TEMPO OBSTACLES WITHIN A CIRCLE WITH A RADIUS OF 15KM (OF ARP)."},
+{"id":"G2963/26","q_code":"QMPLC","expires":"Sep 30, 2026 15:59 UTC","desc":"PRKG STAND GY07,GY08,GY09,GY10 CLSD DUE TO WIP."}
+]},
+"WMKK": {"fetched_at":"2026-09-29T12:35","notams":[
+{"id":"A3004/26","q_code":"QOBCE","expires":"Nov 1, 2026 10:00 UTC","desc":"CRANE ERECTED WITH MAX HGT FM GND 33M/108.26FT LCA AT COORD 1. 024357N 1014111E."},
+{"id":"A2883/26","q_code":"QWULW","expires":"Oct 30, 2026 09:00 UTC","desc":"UA ACT WILL TAKE PLACE WI THE FLW COORD: 025356.00N 1013846.00E - 025356.00N 1013946.00E, SFC-200M AGL, DAILY 2300-0400UTC."},
+{"id":"A2976/26","q_code":"QOBCE","expires":"Nov 1, 2026 00:00 UTC","desc":"CRANE ERECTED WITH MAX HGT FM GND 35M/144.82FT LCA AT COORD ( ACFT STAND K14,K16,K18,K20 )."},
+{"id":"A2977/26","q_code":"QOBCE","expires":"Nov 1, 2026 10:00 UTC","desc":"CRANE ERECTED WITH MAX HGT FM GND 33M/108.26FT LCA AT COORD 1. 024357N 1016863E ( T2 AREA )."}
+]}
+};
+
+// ═══════════════════════ 模式检测 ═══════════════════════
+let SERVER_MODE = false;
+(async function detectMode() {
+  try {
+    const r = await fetch('/api/ping', {timeout: 3000});
+    if (r.ok) { SERVER_MODE = true; }
+  } catch (e) { SERVER_MODE = false; }
+  const badge = document.getElementById('mode-badge');
+  const text = document.getElementById('mode-text');
+  if (SERVER_MODE) {
+    badge.className = 'mode-badge mode-server';
+    text.textContent = '在线服务器 · 全自动';
+  } else {
+    badge.className = 'mode-badge mode-local';
+    text.textContent = '本地模式 · WX/TAF/NOTAM浏览器直连';
+  }
+})();
+
+// ═══════════════════════ 数据来源设置 ═══════════════════════
+function getSettings() {
+  let notam_mode = 'merge', taf_mode = 'auto';
+  try {
+    notam_mode = localStorage.getItem('av_notam_mode') || 'merge';
+    taf_mode = localStorage.getItem('av_taf_mode') || 'auto';
+  } catch (e) {}
+  return { notam_mode, taf_mode };
+}
+
+function syncSettingsUI() {
+  const s = getSettings();
+  document.querySelectorAll('input[name="notam_mode"]').forEach(r => {
+    r.checked = r.value === s.notam_mode;
+    r.closest('label').classList.toggle('checked', r.checked);
+  });
+  document.querySelectorAll('input[name="taf_mode"]').forEach(r => {
+    r.checked = r.value === s.taf_mode;
+    r.closest('label').classList.toggle('checked', r.checked);
+  });
+}
+
+function onSettingChange() {
+  const nm = document.querySelector('input[name="notam_mode"]:checked');
+  const tm = document.querySelector('input[name="taf_mode"]:checked');
+  try {
+    if (nm) localStorage.setItem('av_notam_mode', nm.value);
+    if (tm) localStorage.setItem('av_taf_mode', tm.value);
+  } catch (e) {}
+  syncSettingsUI();
+}
+
+function toggleSettings() {
+  const card = document.getElementById('settings-card');
+  const btn = document.getElementById('gear-btn');
+  card.classList.toggle('open');
+  btn.classList.toggle('on', card.classList.contains('open'));
+  if (card.classList.contains('open')) syncSettingsUI();
+}
+
+// ═══════════════════════ 工具函数 ═══════════════════════
+document.getElementById('date').value = new Date().toISOString().split('T')[0];
+
+function quickFill(dep, arr, dep_time, arr_time) {
+  document.getElementById('dep').value = dep;
+  document.getElementById('arr').value = arr;
+  document.getElementById('dep_time').value = dep_time;
+  document.getElementById('arr_time').value = arr_time;
+}
+
+function togglePaste() {
+  const body = document.getElementById('paste-body');
+  const btn = document.querySelector('.paste-toggle');
+  body.classList.toggle('open');
+  btn.textContent = body.classList.contains('open')
+    ? '▾ 手动粘贴 TAF / NOTAM（可选）' : '▸ 手动粘贴 TAF / NOTAM（可选，来自 JEP Pro 等软件）';
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && document.activeElement && document.activeElement.tagName === 'INPUT') {
+    fetchBrief();
+  }
+});
+
+function showError(msg) {
+  const errEl = document.getElementById('error');
+  errEl.textContent = msg;
+  errEl.classList.add('active');
+}
+
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);'
+      + 'background:var(--bg3);border:1px solid var(--rule);color:var(--ink);'
+      + 'padding:10px 16px;border-radius:8px;font-size:12px;line-height:1.5;'
+      + 'z-index:999;max-width:90vw;box-shadow:0 6px 20px rgba(0,0,0,.45)';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function() { t.style.display = 'none'; }, 8000);
+}
+
+// 强制刷新NOTAM缓存：服务器模式重新在线抓取并写回 notam_cache.json
+async function refreshNotams() {
+  const btn = document.getElementById('btn-refresh');
+  const dep = (document.getElementById('dep').value || '').trim().toUpperCase();
+  const arr = (document.getElementById('arr').value || '').trim().toUpperCase();
+  if (!SERVER_MODE) {
+    showToast('本地双击模式没有服务器，无法刷新缓存。请用 start.bat 启动服务器后再点击，或展开粘贴框粘贴 JEP Pro 通告。');
+    return;
+  }
+  const old = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '刷新中…';
+  try {
+    const qs = new URLSearchParams();
+    if (dep) qs.set('dep', dep);
+    if (arr) qs.set('arr', arr);
+    if (!dep && !arr) qs.set('all', '1');
+    const r = await fetch('/api/refresh?' + qs.toString());
+    const j = await r.json().catch(function() { return null; });
+    let msg = '刷新失败';
+    if (j && j.results) {
+      const parts = Object.keys(j.results).map(function(k) {
+        const v = j.results[k];
+        return k + '：' + (v.ok ? ('在线 ' + v.active + ' 条') : ('在线失败，缓存 ' + v.active + ' 条'));
+      });
+      msg = '刷新结果 — ' + parts.join('   ');
+    } else if (j && j.error) {
+      msg = '刷新失败：' + j.error;
+    }
+    showToast(msg);
+    if (dep && arr) await fetchBrief();
+  } catch (e) {
+    showToast('刷新请求失败: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = old;
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str == null ? '' : String(str);
+  return div.innerHTML;
+}
+
+// BJT日期+时间 → UTC日期对象（处理跨日）
+function bjtToUtc(dateStr, hhmm, isNextDay) {
+  const y = parseInt(dateStr.slice(0,4)), mo = parseInt(dateStr.slice(5,7))-1, d = parseInt(dateStr.slice(8,10));
+  const h = parseInt(hhmm.slice(0,2)), mi = parseInt(hhmm.slice(2,4));
+  let dt = new Date(Date.UTC(y, mo, d, h, mi));
+  if (isNextDay) dt = new Date(dt.getTime() + 86400000);
+  return new Date(dt.getTime() - 8*3600000); // BJT-8 = UTC
+}
+
+// 通告系列字母决定时间基准: C/K = 北京时(BJT, UTC+8); 其余(A/E/F/G/L/U/W/Y…) = UTC
+function notamSeriesOffsetMs(id) {
+  const s = String(id || '').trim().toUpperCase()[0];
+  return (s === 'C' || s === 'K') ? -8 * 3600000 : 0;
+}
+
+// NOTAM 时间字符串 → 毫秒时间戳 (支持 "2026-10-08 05:00 UTC" / "Oct 16, 2026 15:59 UTC")
+// offsetMs: 该通告系列相对 UTC 的偏移 (C/K 系列为 -8h)
+function notamTimeToMs(s, isEnd, offsetMs) {
+  if (!s) return null;
+  const t = String(s).toUpperCase();
+  if (t.includes('UFN') || t.includes('UNTIL FURTHER') || t.includes('PERM') || t.includes('永久')) {
+    return isEnd ? Infinity : -Infinity;
+  }
+  offsetMs = offsetMs || 0;
+  let m = t.match(/(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/);
+  if (m) return Date.UTC(+m[1], +m[2]-1, +m[3], m[4] ? +m[4] : (isEnd ? 23 : 0), m[5] ? +m[5] : (isEnd ? 59 : 0)) + offsetMs;
+  m = t.match(/([A-Z]{3})\s+(\d{1,2}),?\s*(\d{4})(?:\s+(\d{2}):(\d{2}))?/);
+  if (m) {
+    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    const mo = months.indexOf(m[1]);
+    if (mo >= 0) return Date.UTC(+m[3], mo, +m[2], +(m[4] || '23'), +(m[5] || '59')) + offsetMs;
+  }
+  return null;
+}
+
+// NOTAM 有效期与本次航班时段是否有交集 (缺时间信息时保守视为生效)
+function notamOverlapsFlight(notam, fw) {
+  if (!fw) return true;
+  const off = notamSeriesOffsetMs(notam.id);
+  const s = notamTimeToMs(notam.effective, false, off);
+  const e = notamTimeToMs(notam.expires, true, off);
+  const start = s == null ? -Infinity : s;
+  const end = e == null ? Infinity : e;
+  return start <= fw.end && end >= fw.start;
+}
+
+// NOTAM过期检查 (JS版) — 按系列基准换算 (C/K 为北京时)
+function notamExpired(expiresStr, id) {
+  if (!expiresStr) return false;
+  const e = notamTimeToMs(expiresStr, true, notamSeriesOffsetMs(id));
+  if (e == null || e === Infinity || e === -Infinity) return false;
+  return Date.now() > e;
+}
+
+// ═══════════════════════ NOTAM 分类 (翼展≤36m C类) ═══════════════════════
+function classifyNotam(notam, flightWindow) {
+  const desc = notam.desc.toUpperCase();
+  // ── 时间相关性: 通告生效窗口与该机场[操作时间-1h, +3h]无交集 → 与本次飞行无关 → LOW ──
+  // 降级为 LOW 时仍保留其性质(如"跑道02L/20R关闭"), 失效时间以北京时间展示便于比对
+  notam.timeIrrelevant = false;
+  if (flightWindow && !notamOverlapsFlight(notam, flightWindow)) {
+    notam.timeIrrelevant = true;
+    return 'LOW';
+  }
+  // ── 最高优先级: 通告明确声明"对起降性能无影响" → 强制 LOW (障碍物/塔吊类) ──
+  // 覆盖表格表头 "影响的飞行程序及起飞航径区" 造成的误判
+  if (/NO INFLUENCE ON TAKEOFF AND LANDING PERFORMANCE|NO IMPACT ON TAKE-?OFF/.test(desc)
+      || /对起飞和着陆性能(均)?无影响|对起降性能(均)?无影响|对起飞着陆性能(均)?无影响|对性能无影响|无程序影响/.test(desc)) {
+    return 'LOW';
+  }
+  // MED: 跑道关闭 (EN: RWY 15/33, RWY 14L/32R 等)
+  if (['RWY CLSD','RUNWAY CLOSED','RWY DISTANCE REDUCED','TORA CHANGED','TODA CHANGED','ASDA CHANGED','LDA CHANGED'].some(k => desc.includes(k))) return 'MED';
+  if (/\b(?:RWY|RUNWAY)\s+[\dRLC/]+\s+(?:CLSD|CLOSED)/.test(desc)) return 'MED';
+  if (/CLOSURE OF RWY|RUNWAY CLOSURE SCHEDULE|SCHEDULED CLOSURE/.test(desc)) return 'MED';
+  // MED: 跑道关闭 (CN)
+  if (desc.includes('跑道') && (desc.includes('关闭') || desc.includes('CLSD'))) return 'MED';
+  // MED: 一发失效程序 (EN+CN)
+  if (desc.includes('一发失效') || desc.includes('ONE ENGINE FAILURE')) return 'MED';
+  // MED: 鸟类活动/鸟击风险 (CN+EN)
+  if (/鸟击|迁徙鸟|候鸟|猛禽|鸟防|驱鸟|BIRD ACTIVITY|BIRD STRIKE|BIRD HAZARD|FLOCK/.test(desc) && !/无鸟/.test(desc)) return 'MED';
+  // MED: 障碍物影响飞行性能/程序 (CN)
+  if (/影响\s*RWY\s*\d+[RL]?.*(?:性能|程序|起飞|一发)/.test(desc)) return 'MED';
+  // 排除表头 "影响的飞行程序及起飞航径区/备注" (非真实影响) → 负向先行断言
+  if (/影响(?!的飞行程序).*?(?:起飞航径|爬升梯度|进近程序|着陆性能)/.test(desc)) return 'MED';
+
+  // CHECK TIME: 导航设备 (EN+CN)
+  if (/VOR\/DME|DVOR\/DME/.test(desc) && /U\/S|WITHDRAWN|OUT OF SERVICE|不提供使用|限用|停用/.test(desc)) return 'CHECK TIME';
+  if (/\bILS\b|\bDME\b|\bNDB\b|\bVOR\b/.test(desc) && /U\/S|OUT OF SERVICE|ON TEST|DO NOT USE|不提供使用|停用/.test(desc)) return 'CHECK TIME';
+  if (/APCH LGT.*DOWNGRADE|DOWNGRADE TO CAT/.test(desc)) return 'CHECK TIME';
+  if (/(SID|STAR|IAC|PROCEDURE).*?(U\/S|停用)/.test(desc)) return 'CHECK TIME';
+
+  // MED: 滑行道整段关闭 (EN: "TWY Q11 CLSD BTN ..." = Q11整段 → MED)
+  if (/TWY\s+\w+\s+CLSD(?!\s+ONLY|\s+BTN.*ONLY|\s+(?:EAST|WEST|NORTH|SOUTH)\s+OF\b)/.test(desc)) return 'MED';
+  if (/TWY\s+\w+.*\bCLSD\b/.test(desc) && !desc.includes('ONLY AVBL')) {
+    // 部分关闭(顺序无关): BTN X AND Y / EAST OF X 等 → GND CHECK
+    if (/BTN|FM|TIL|BETWEEN|(EAST|WEST|NORTH|SOUTH)\s+OF/.test(desc)) return 'GND CHECK';
+    return 'MED';
+  }
+  // GND CHECK: 清单式滑行道/联络道关闭 (EN: "TWY CLSD DUE TO WIP DETAIL AS FLW: -TWY K BTN TWY D AND TWY J4 -TWY J3")
+  if (/\b(?:TWY|TXL)\s+CLSD\b/.test(desc)) return 'GND CHECK';
+  // GND CHECK: 部分关闭滑行道 (EN: "THE PARTIAL CLOSURE OF TWY C AND TWY K")
+  if (/(?:PARTIAL\s+)?CLOSURE OF TWY/.test(desc)) return 'GND CHECK';
+  // MED: 滑行道整段关闭 (CN: 名称在前 "B滑行道关闭" / "Q11滑道关闭")
+  if (/[A-Z0-9]{1,5}\s*滑行道\s*(?:关闭|不可用|CLSD|停止使用)/.test(desc)) return 'MED';
+  if (/[A-Z0-9]{1,5}\s*滑\s*(?:关闭|不可用|CLSD)/.test(desc)) return 'MED';
+  // MED: 滑行道整段关闭 (CN: "关闭X滑与Y滑之间的Z滑行道")
+  if (/关闭.{1,15}滑与.{1,15}滑之间的\s*\S{1,6}滑/.test(desc)) return 'MED';
+  // MED: 滑行道整段关闭 (CN: "关闭S1滑行道")
+  if (/关闭\s*\S{1,6}滑行道/.test(desc)) return 'MED';
+  // GND CHECK: 滑行道部分关闭 (CN: "关闭Q滑以东的J43滑")
+  if (desc.includes('关闭') && /\S{1,6}滑(?![行道])/.test(desc)) return 'GND CHECK';
+  // GND CHECK: 联络道关闭 (EN: "INT C3, P3 CLSD")
+  if (/\bINT\s+[\w,\s]+CLSD/.test(desc)) return 'GND CHECK';
+
+  // MED: 性能程序受影响
+  if (/TAKE-OFF FLIGHT PATH(\s+AREA)?\s+AFFECTED/.test(desc)) return 'MED';
+  if (/PROCEDURE\s+AFFECTED/.test(desc)) return 'MED';
+  if (desc.includes('MINIMA CHANGED') || desc.includes('CLIMB GRADIENT')) return 'MED';
+
+  // GND CHECK: 滑行转弯限制 (EN+CN)
+  if (['TURN LEFT TO','TURN RIGHT TO','FORBIDDEN TO TURN','FORBIDDEN TO ENTER','TURN RESTRICTION'].some(k => desc.includes(k))) return 'GND CHECK';
+  if (desc.includes('不得左转') || desc.includes('不得右转') || desc.includes('仅限翼展')) return 'GND CHECK';
+  if (/右转至\s*\S{1,4}滑\s*仅限/.test(desc)) return 'GND CHECK';
+
+  // LOW: 停机位 (EN+CN)
+  if ((desc.includes('PARKING STAND') || desc.includes('PRKG STAND') || desc.includes('ACFT STAND')) && desc.includes('CLSD')) return 'LOW';
+  if (desc.includes('机位关闭')) return 'LOW';
+  // LOW: 障碍物/塔吊 (EN+CN)
+  if (['OBST','CRANE','OBSTACLE','WIND TURBINE'].some(k => desc.includes(k)) || desc.includes('障碍物') || desc.includes('塔吊')) return 'LOW';
+  // 默认 LOW
+  return 'LOW';
+}
+
+// ═══════════════════════ 主流程 ═══════════════════════
+async function fetchBrief() {
+  const dep = document.getElementById('dep').value.trim().toUpperCase();
+  const arr = document.getElementById('arr').value.trim().toUpperCase();
+  const date = document.getElementById('date').value;
+  const dep_time = document.getElementById('dep_time').value.trim();
+  const arr_time = document.getElementById('arr_time').value.trim();
+
+  const errEl = document.getElementById('error');
+  const loadEl = document.getElementById('loading');
+  const resEl = document.getElementById('result');
+  const btn = document.getElementById('btn-submit');
+
+  if (!dep || !arr || !date || !dep_time || !arr_time) {
+    showError('请填写所有字段: DEP / ARR / DATE / DEP TIME / ARR TIME');
+    return;
+  }
+  if (dep_time.length !== 4 || arr_time.length !== 4) {
+    showError('时间格式: HHMM (例如 1200)');
+    return;
+  }
+
+  errEl.classList.remove('active');
+  resEl.classList.remove('active');
+  resEl.innerHTML = '';
+  loadEl.classList.add('active');
+  btn.disabled = true;
+
+  try {
+    let data;
+    const settings = getSettings();
+    const manualTaf = document.getElementById('manual_taf').value.trim();
+    const manualNotam = document.getElementById('manual_notam').value.trim();
+
+    if (SERVER_MODE) {
+      // ── 服务器模式：POST携带手动粘贴内容与来源设置 ──
+      document.getElementById('loading-text').textContent = '获取 WX / TAF / NOTAM 数据中…';
+      const resp = await fetch('/api/brief', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dep, arr, date, dep_time, arr_time,
+          manual_notam: manualNotam,
+          manual_taf: manualTaf,
+          notam_mode: settings.notam_mode,
+          taf_mode: settings.taf_mode,
+        }),
+      });
+      const text = await resp.text();
+      try { data = JSON.parse(text); } catch (e) {
+        showError('服务器返回异常 (非JSON): ' + text.substring(0, 150));
+        return;
+      }
+      if (data.error) { showError(data.error); return; }
+    } else {
+      // ── 本地模式：WX/TAF直连 + NOTAM在线(代理)/缓存/手动粘贴 ──
+      document.getElementById('loading-text').textContent = '本地模式: 获取WX / 在线NOTAM中…';
+      data = await buildLocalBrief(dep, arr, date, dep_time, arr_time);
+    }
+    renderResult(data);
+    resEl.classList.add('active');
+  } catch (e) {
+    showError('请求失败: ' + e.message);
+  } finally {
+    loadEl.classList.remove('active');
+    btn.disabled = false;
+  }
+}
+
+// ═══════════════════════ 本地模式数据组装 ═══════════════════════
+async function buildLocalBrief(dep, arr, date, dep_time, arr_time) {
+  const isOvernight = parseInt(arr_time) < parseInt(dep_time);
+  const d = new Date(date + 'T00:00:00Z');
+  const arrDate = isOvernight ? new Date(d.getTime() + 86400000).toISOString().slice(0,10) : date;
+
+  // 关注时段 (UTC 毫秒): 该机场操作时间(落地/起飞)前1h ~ 后3h
+  const H = 3600000;
+  const depUtcMs = bjtToUtc(date, dep_time, false).getTime();
+  const arrUtcMs = bjtToUtc(date, arr_time, isOvernight).getTime();
+  const depWindow = { start: depUtcMs - H, end: depUtcMs + 3*H };
+  const arrWindow = { start: arrUtcMs - H, end: arrUtcMs + 3*H };
+
+  const data = {
+    dep, arr, date, arr_date: arrDate, dep_time, arr_time,
+    dep_name: (AIRPORTS[dep]||{}).name || '',
+    arr_name: (AIRPORTS[arr]||{}).name || '',
+  };
+
+  // 来源设置 + 手动粘贴内容
+  const settings = getSettings();
+  const manualTaf = document.getElementById('manual_taf').value.trim();
+  const manualNotam = document.getElementById('manual_notam').value.trim();
+  const manualParsed = manualNotam ? parseManualNotams(manualNotam) : { byAirport: {}, unrecognized: [], fmt: 'none' };
+
+  // 尽早并发启动在线NOTAM获取（与WX/TAF并行，失败自动回退缓存/手动粘贴）
+  const notamOnlinePromise = (settings.notam_mode === 'manual')
+    ? Promise.resolve(null)
+    : Promise.all([
+        fetchNotamsOnline(dep),
+        dep === arr ? Promise.resolve(null) : fetchNotamsOnline(arr),
+      ]);
+
+  // WX 并行获取（Open-Meteo 直连，支持CORS）
+  const wxPromises = [];
+  wxPromises.push(fetchWxDirect(dep, date, parseInt(dep_time.slice(0,2))).then(w => { if (w) data.dep_wx = w; }));
+  {
+    const h1 = parseInt(arr_time.slice(0,2));
+    wxPromises.push(
+      fetchWxDirect(arr, arrDate, h1).then(w1 => {
+        if (w1) {
+          data.arr_wx = { ...w1, pop_1: w1.pop, precip_1: w1.precip, wind_dir_1: w1.wind_dir, wind_spd_1: w1.wind_spd, wind_gst_1: w1.wind_gst, vis_1: w1.vis, wx_name_1: w1.wx_name };
+          return fetchWxDirect(arr, h1+1 >= 24 ? new Date(new Date(arrDate+'T00:00:00Z').getTime()+86400000).toISOString().slice(0,10) : arrDate, (h1+1)%24).then(w2 => {
+            if (w2) {
+              data.arr_wx.pop_2 = w2.pop; data.arr_wx.precip_2 = w2.precip;
+              data.arr_wx.wind_dir_2 = w2.wind_dir; data.arr_wx.wind_spd_2 = w2.wind_spd; data.arr_wx.wind_gst_2 = w2.wind_gst;
+              data.arr_wx.vis_2 = w2.vis; data.arr_wx.wx_name_2 = w2.wx_name;
+            }
+          });
+        }
+      })
+    );
+  }
+  await Promise.allSettled(wxPromises);
+
+  // TAF: 按来源设置
+  if (settings.taf_mode === 'manual' && manualTaf) {
+    data.taf = parseTafManual(manualTaf, arr, arr_time, date, isOvernight);
+  } else if (settings.taf_mode === 'manual') {
+    data.taf = { error: 'NO_TAF', message: '手动模式：未粘贴TAF，请展开粘贴框粘贴' };
+  } else {
+    data.taf = await fetchTafDirect(arr, arr_time, date, isOvernight);
+    if (data.taf.error && manualTaf) {
+      data.taf = parseTafManual(manualTaf, arr, arr_time, date, isOvernight);
+    }
+  }
+
+  // NOTAM: 在线(代理)优先 → 内置缓存 → 手动粘贴（按来源设置合并）
+  const onlineRes = await notamOnlinePromise;
+  let depOnline = null, arrOnline = null;
+  if (onlineRes) {
+    const dOn = onlineRes[0], aOn = onlineRes[1];
+    if (dOn && dOn.source) lastNotamSource = dOn.source;
+    else if (aOn && aOn.source) lastNotamSource = aOn.source;
+    depOnline = dOn ? dOn.list : null;
+    arrOnline = dep === arr ? depOnline : (aOn ? aOn.list : null);
+  }
+  data.dep_notam = assembleNotams(dep, manualParsed.byAirport[dep], settings.notam_mode, depOnline, depWindow);
+  data.arr_notam = assembleNotams(arr, manualParsed.byAirport[arr], settings.notam_mode, arrOnline, arrWindow);
+  data.notam_unrecognized = manualParsed.unrecognized;
+
+  return data;
+}
+
+// ── 机场坐标解析：预置库 → 服务器 stationinfo 接口(仅服务器模式) ──
+const _coordCache = {};
+async function resolveAirport(icao) {
+  if (AIRPORTS[icao]) return AIRPORTS[icao];
+  if (icao in _coordCache) return _coordCache[icao];
+  let ap = null;
+  if (SERVER_MODE) {
+    try {
+      const r = await fetch('/api/coords?icao=' + icao);
+      if (r.ok) {
+        const j = await r.json();
+        if (j && j.lat != null) ap = { lat: j.lat, lon: j.lon, name: j.name || icao };
+      }
+    } catch (e) { ap = null; }
+  }
+  _coordCache[icao] = ap;
+  return ap;
+}
+
+async function fetchWxDirect(icao, dateStr, hour) {
+  const ap = await resolveAirport(icao);
+  if (!ap) return null;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${ap.lat}&longitude=${ap.lon}&hourly=precipitation,precipitation_probability,rain,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,weather_code&start_date=${dateStr}&end_date=${dateStr}&timezone=Asia%2FShanghai&wind_speed_unit=ms`;
+  const resp = await fetch(url);
+  if (!resp.ok) return null;
+  const j = await resp.json();
+  if (!j.hourly) return null;
+  const key = `${dateStr}T${String(hour).padStart(2,'0')}:00`;
+  const idx = j.hourly.time.indexOf(key);
+  if (idx < 0) return null;
+  const h = j.hourly;
+  const wx = {
+    icao, time: key,
+    precip: h.precipitation[idx], pop: h.precipitation_probability[idx], rain: h.rain[idx],
+    wind_spd: Math.round(h.wind_speed_10m[idx]*10)/10, wind_dir: h.wind_direction_10m[idx],
+    wind_gst: Math.round(h.wind_gusts_10m[idx]*10)/10,
+    vis: Math.round(h.visibility[idx]), wx_code: h.weather_code[idx],
+    wx_name: WX_NAME[h.weather_code[idx]] || String(h.weather_code[idx]),
+  };
+  wx.risk = riskWx(wx.pop, wx.vis, wx.wx_code);
+  return wx;
+}
+
+function riskWx(pop, vis, code) {
+  const isTs = code === 95 || code === 96;
+  if (isTs || (vis != null && vis < 800)) return 'HIGH';
+  if ((pop != null && pop > 70 && vis != null && vis < 3000)) return 'HIGH';
+  if ((pop != null && 30 <= pop && pop <= 70) || (vis != null && 800 <= vis && vis <= 5000)) return 'MED';
+  return 'LOW';
+}
+
+// ═══════════════════════ TAF 解析 ═══════════════════════
+async function fetchTafDirect(icao, arrTime, date, isOvernight) {
+  try {
+    const resp = await fetch(`https://aviationweather.gov/api/data/taf?ids=${icao}&format=raw`);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const raw = (await resp.text()).trim();
+    if (!raw.startsWith('TAF')) throw new Error('empty');
+    return parseTafCore(raw, icao, arrTime, date, isOvernight, 'AviationWeather');
+  } catch (e) {
+    return { error: 'NO_TAF', message: 'TAF直连不可用，请展开手动粘贴框粘贴TAF' };
+  }
+}
+
+function parseTafManual(rawText, icao, arrTime, date, isOvernight) {
+  const raw = rawText.trim();
+  const res = parseTafCore(raw, icao, arrTime, date, isOvernight, '手动粘贴');
+  if (res.error) { res.message = 'TAF格式无法解析，请粘贴完整TAF (含 TAF 头)'; }
+  return res;
+}
+
+function parseTafCore(raw, icao, arrTime, date, isOvernight, source) {
+  const mIssue = raw.match(/TAF\s+\w+\s+(\d{6})Z/);
+  const mValid = raw.match(/TAF\s+\w+\s+\d{6}Z\s+(\d{4})\/(\d{4})/);
+  if (!mIssue || !mValid) return { error: 'NO_TAF', message: 'TAF格式错误' };
+
+  // UTC时间
+  const utc = bjtToUtc(date, arrTime, isOvernight);
+  const utcDay = utc.getUTCDate(), utcH = utc.getUTCHours(), utcM = utc.getUTCMinutes();
+
+  const [sd, sh] = [parseInt(mValid[1].slice(0,2)), parseInt(mValid[1].slice(2,4))];
+  const [ed, eh] = [parseInt(mValid[2].slice(0,2)), parseInt(mValid[2].slice(2,4))];
+  let t = utcDay * 100 + utcH;
+  let s = sd * 100 + sh, e = ed * 100 + eh;
+  if (e < s) { if (t < s) t += 3100; e += 3100; }
+  const covers = s <= t && t <= e;
+
+  const result = { source, issue: mIssue[1] + 'Z', valid: mValid[1] + '/' + mValid[2], covers };
+
+  if (covers) {
+    // 分组解析
+    let body = raw.replace(/^TAF\s+\w+\s+\d{6}Z\s+\d{4}\/\d{4}\s*/, '').trim();
+    body = body.replace(/TX\d{2}\/\d{4}Z\s*/g, '').replace(/TN\d{2}\/\d{4}Z\s*/g, '');
+    const parts = body.split(/\s+(?=TEMPO|BECMG|FM|PROB\d{2})/);
+    const groups = { TEMPO: [], BECMG: [], FM: [], PROB: [] };
+    for (const p of parts.slice(1)) {
+      const m = p.match(/^(TEMPO|BECMG|FM|PROB\d{2})\s+([\s\S]*)/);
+      if (m) {
+        const key = m[1].startsWith('PROB') ? 'PROB' : m[1];
+        groups[key].push(m[1] + ' ' + m[2].trim());
+      }
+    }
+    result.base = parts[0].trim();
+    result.target_groups = [];
+    result.risk = 'LOW';
+    for (const [type, list] of Object.entries(groups)) {
+      for (const g of list) {
+        const gm = g.match(/(\d{2})(\d{2})\/(\d{2})(\d{2})/);
+        if (gm) {
+          let gs = parseInt(gm[1])*100 + parseInt(gm[2]);
+          let ge = parseInt(gm[3])*100 + parseInt(gm[4]);
+          let tt = utcDay * 100 + utcH;
+          if (ge < gs) { if (tt < gs) tt += 3100; ge += 3100; }
+          if (gs <= tt && tt <= ge) {
+            result.target_groups.push(g);
+            const gu = g.toUpperCase();
+            if (/TSRA|\+TSRA|TS|\+TS|CB/.test(gu.replace(/TSRA/g,'TSRA'))) {
+              if (gu.includes('TSRA') || gu.includes('TS') || gu.includes('CB')) result.risk = 'HIGH';
+            }
+            if (result.risk !== 'HIGH' && /SHRA|\+SHRA|\sRA\s|\sFG\s|\sBR\s/.test(' ' + gu + ' ')) result.risk = 'MED';
+          }
+        }
+      }
+    }
+  }
+  return result;
+}
+
+// ═══════════════════════ NOTAM 手动解析 (JEP Pro / ICAO格式) ═══════════════════════
+function truncStr(s, n) {
+  const t = s.replace(/\s+/g, ' ').trim();
+  return t.length > n ? t.slice(0, n) + '…' : t;
+}
+
+// ── 中文障碍物通告专用解析 (JEP Pro "障碍物"导出) ──
+function parseCnObstBlocks(text) {
+  const result = { byAirport: {}, unrecognized: [] };
+  const pat = /\b([A-Z]{4})\s+障碍物\s+([A-Z]\d{4}\/\d{2}\b)\s*(\d{10})\s*-\s*(\d{10})\s*(?:EST\s*)?([\s\S]*?)(?=\n[A-Z]{4}\s+障碍物|\n[A-Z]\d{4}\/\d{2}\b|\n(?:PIB\s*)?REMARKS\b|\n$|$)/g;
+  let m;
+  while ((m = pat.exec(text)) !== null) {
+    const icao = m[1], id = m[2];
+    const startS = m[3], endS = m[4];
+    const body = m[5];
+    const expires = endS ? `20${endS.slice(0,2)}-${endS.slice(2,4)}-${endS.slice(4,6)} ${endS.slice(6,8)}:${endS.slice(8,10)} UTC` : '';
+    const effective = startS !== '0000000000' ? `20${startS.slice(0,2)}-${startS.slice(2,4)}-${startS.slice(4,6)} ${startS.slice(6,8)}:${startS.slice(8,10)} UTC` : '';
+    // 构建描述: 障碍物表名 + 备注/影响信息
+    let descLines = [];
+    const note = body.match(/备注[:：]\s*(.+)/);
+    if (note) descLines.push('备注: ' + note[1].trim());
+    // 同时提取表格中各项目的"影响的飞行程序"列的非"无"项
+    const impactCol = body.match(/影响\s*(?:的\s*)?飞行程序.*?\n([\s\S]*?)(?:\n\s*\n|$)/);
+    if (impactCol) {
+      const cols = impactCol[1].replace(/\s+/g, ' ').trim();
+      if (cols && cols !== '无') descLines.push('飞行程序: ' + cols);
+    }
+    // 如果有任何"影响.*性能"的信息也提取
+    const perfImpact = body.match(/影响\s*RWY\s*\d+[RL]?\s*.*?(?:性能|程序)/);
+    if (perfImpact) descLines.push(perfImpact[0]);
+    const allDesc = descLines.join('; ');
+    const desc = allDesc || ('机场半径内新增临时障碍物');
+    if (!result.byAirport[icao]) result.byAirport[icao] = [];
+    result.byAirport[icao].push({ id, q_code: '', priority: '5', effective, expires, desc, expired: notamExpired(expires, id), manual: true, cnObst: true });
+  }
+  return result;
+}
+
+function parseManualNotams(text) {
+  // 括号包裹的ID统一去掉: (A2923/26) → A2923/26
+  const cleaned = text.replace(/[（(]\s*([A-Z]\d{4}\/\d{2})\s*[）)]/g, '$1');
+  const byAirport = {};
+  const unrecognized = [];
+
+  // ── 先提取中文障碍物专用块 ──
+  const cnObst = parseCnObstBlocks(cleaned);
+  for (const [icao, lst] of Object.entries(cnObst.byAirport)) {
+    byAirport[icao] = (byAirport[icao] || []).concat(lst);
+  }
+  unrecognized.push(...cnObst.unrecognized);
+  // 从中剔除已识别的CN障碍物块，剩余送入JEP/ICAO路由
+  let rest = cleaned.replace(/\b[A-Z]{4}\s+障碍物\s+[A-Z]\d{4}\/\d{2}\b[\s\S]*?(?=\n[A-Z]{4}\s+障碍物|\n[A-Z]\d{4}\/\d{2}\b|\n(?:PIB\s*)?REMARKS\b|$)/g, '');
+
+  // ── 按空行分段，每段独立路由: JEP中文导出 或 ICAO标准 ──
+  const jepHead = /^[（(]?[*＊]{0,2}[）)]?\s*[A-Z]{4}\s+[A-Z]\d{3,4}\/\d{2}\s+\d{12}\s*-\s*/;
+  const jepParas = [], icaoParas = [];
+  for (const para of rest.split(/\n\s*\n/)) {
+    const p = para.trim();
+    if (!p) continue;
+    const hasJep = p.split('\n').some(ln => jepHead.test(ln.trim()));
+    (hasJep ? jepParas : icaoParas).push(p);
+  }
+  let fmt = 'none';
+  if (jepParas.length > 0) {
+    const r1 = parseJepNotams(jepParas.join('\n\n'));
+    for (const [icao, lst] of Object.entries(r1.byAirport)) {
+      byAirport[icao] = (byAirport[icao] || []).concat(lst);
+    }
+    unrecognized.push(...r1.unrecognized);
+  }
+  if (icaoParas.length > 0) {
+    parseIcaoBlocks(icaoParas.join('\n\n'), byAirport, unrecognized);
+  }
+  fmt = jepParas.length > 0 && icaoParas.length === 0 ? 'jep'
+      : jepParas.length > 0 && icaoParas.length > 0 ? 'mixed'
+      : icaoParas.length > 0 ? 'icao' : 'none';
+  return { byAirport, unrecognized, fmt };
+}
+
+// ICAO标准格式解析 (A)/B)/C)/E) 字段)
+function parseIcaoBlocks(text, byAirport, unrecognized) {
+  const blocks = text.split(/(?=[A-Z]\d{4}\/\d{2}\b)/);
+  for (const block of blocks) {
+    const b = block.trim();
+    if (!b) continue;
+    const mId = b.match(/^([A-Z]\d{4}\/\d{2})/);
+    if (!mId) {
+      // 无NOTAM编号的片段 → 未识别
+      if (b.replace(/\s/g, '').length > 4) unrecognized.push(truncStr(b, 200));
+      continue;
+    }
+    const id = mId[1];
+
+    // 机场识别: 仅认 A) 行；缺失则视为未解读 → 末端列出
+    const mA = b.match(/A\)\s*:?\s*([A-Z]{4})\b/);
+    if (!mA) {
+      // 回退：中文障碍物通告格式 "ZGGG  障碍物  C5535/26  ..." → 提取开头ICAO
+      const fb = b.match(/^([A-Z]{4})\s+(?:障碍物|OBST)/);
+      if (fb) {
+        const icao = fb[1];
+        // 简易描述(去表头取内容)
+        const lines = b.split('\n');
+        let impDesc = '';
+        const note = b.match(/备注[:：]\s*(.+)/);
+        if (note) impDesc = '障碍物 | ' + note[1].trim();
+        else {
+          const nonEmpty = lines.filter(l => l.trim() && !/^\s*[A-Z]{4}\s+障碍物/.test(l));
+          impDesc = nonEmpty.slice(0, 3).join(' ').trim() || '障碍物通告';
+        }
+        const expM = b.match(/(?:\d{12}\s*-\s*)?(\d{12})/);
+        let expires = '';
+        if (expM) {
+          const s = expM[1];
+          expires = `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)} ${s.slice(8,10)}:${s.slice(10,12)} UTC`;
+        }
+        if (!byAirport[icao]) byAirport[icao] = [];
+        byAirport[icao].push({
+          id, q_code: '', priority: '5',
+          effective: '', expires, desc: impDesc, expired: notamExpired(expires, id),
+          manual: true,
+        });
+        continue;
+      }
+      unrecognized.push(`[${id}] 缺少A)机场代码 → ${truncStr(b, 150)}`);
+      continue;
+    }
+    const icao = mA[1];
+
+    // 有效期: C) ICAO格式 → TO:行 → PERM/UFN
+    let expires = '';
+    let mC = b.match(/C\)\s*:?\s*(\d{10})/);
+    if (!mC) mC = b.match(/TO\W{0,3}(\d{10})\b/);
+    if (mC) {
+      const s = mC[1];
+      expires = `20${s.slice(0,2)}-${s.slice(2,4)}-${s.slice(4,6)} ${s.slice(6,8)}:${s.slice(8,10)} UTC`;
+    } else {
+      const mToDate = b.match(/(?:C\)|TO)\W{0,3}(\d{4}-\d{2}-\d{2})/);
+      if (mToDate) {
+        expires = mToDate[1] + ' 23:59 UTC';
+      } else {
+        const mCUfn = b.match(/C\)\s*:?\s*(PERM|UFN)/i);
+        if (mCUfn) expires = 'PERMANENT';
+      }
+    }
+
+    // 描述: E) 行 (至 F)/G)/R) 或块尾)；无E)则用全文
+    const mE = b.match(/E\)\s*:?\s*([\s\S]+?)(?=\s*[FGR]\)|$)/);
+    const desc = mE ? mE[1].replace(/\s+/g, ' ').trim() : b.replace(/\s+/g, ' ').trim();
+
+    const mQ = b.match(/Q\)\s*:?\s*[A-Z]{4}\/([A-Z]{5})/);
+    if (!byAirport[icao]) byAirport[icao] = [];
+    byAirport[icao].push({
+      id, q_code: mQ ? mQ[1] : '', priority: '5',
+      effective: '', expires, desc, expired: notamExpired(expires, id),
+      manual: true,
+    });
+  }
+}
+
+// JEP Pro 中文导出格式: "(**)ZGGG C4537/26 202607171518 - 202610162359 (大约)" + 中文描述行
+function parseJepNotams(text) {
+  const byAirport = {};
+  const unrecognized = [];
+  // 兼容：通告头前带分隔符/文字(如 "…请机组注意观察.和(**)ZGGG …")，强制换行
+  text = text.replace(/([^\n])\s*(?=[（(][*＊]{0,2}[）)]\s*[A-Z]{4}\s+[A-Z]\d{3,4}\/\d{2}\s+\d{12}\s*-)/g, '$1\n');
+  const headerRe = /^[（(]?[*＊]{0,2}[）)]?\s*([A-Z]{4})\s+([A-Z]\d{3,4}\/\d{2})\s+(\d{12})\s*-\s*(\d{12}|[（(]永久[）)])/;
+  let current = null;
+  const flush = () => {
+    if (current) {
+      const [icao, id, startS, endS, descLines] = current;
+      const desc = descLines.join(' ').replace(/\s+/g, ' ').trim().replace(/[\s和及、,，。;；.：:]+$/, '');
+      let expires = '';
+      if (/永久/.test(endS)) expires = 'PERMANENT';
+      else if (endS) expires = `${endS.slice(0,4)}-${endS.slice(4,6)}-${endS.slice(6,8)} ${endS.slice(8,10)}:${endS.slice(10,12)} UTC`;
+      let effective = '';
+      if (startS && !startS.startsWith('0000')) effective = `${startS.slice(0,4)}-${startS.slice(4,6)}-${startS.slice(6,8)} ${startS.slice(8,10)}:${startS.slice(10,12)} UTC`;
+      if (!byAirport[icao]) byAirport[icao] = [];
+      byAirport[icao].push({
+        id, q_code: '', priority: '5',
+        effective, expires, desc, expired: notamExpired(expires, id),
+        manual: true, jep: true,
+      });
+    }
+    current = null;
+  };
+  for (const line of text.split('\n')) {
+    const s = line.trim();
+    const m = s.match(headerRe);
+    if (m) {
+      flush();
+      current = [m[1], m[2], m[3], m[4], []];
+    } else if (/^-{5,}|\*{4}/.test(s)) {
+      flush();
+    } else if (current) {
+      current[4].push(line);
+    } else if (s.replace(/\s/g, '').length > 4) {
+      unrecognized.push(truncStr(s, 150));
+    }
+  }
+  flush();
+  return { byAirport, unrecognized, fmt: 'jep' };
+}
+
+function hasChinese(s) { return /[\u4e00-\u9fff]/.test(s || ''); }
+
+function dedupManual(entries) {
+  // 同号合并：偏好中文版(含影响信息)，次选描述较长的
+  const map = {};
+  for (const n of entries) {
+    const existing = map[n.id];
+    if (!existing) { map[n.id] = n; continue; }
+    const nHasCN = hasChinese(n.desc), eHasCN = hasChinese(existing.desc);
+    if (nHasCN && !eHasCN) map[n.id] = n;
+    else if (!nHasCN && eHasCN) continue;
+    else if ((n.desc || '').length > (existing.desc || '').length) map[n.id] = n;
+  }
+  return Object.values(map);
+}
+
+// ═══════════════ 本地模式：在线获取NOTAM (FAA，经公共CORS代理) ═══════════════
+// 浏览器直连FAA受CORS限制，这里并发尝试"直连 + 若干公共代理"，取最先成功的通道。
+// 全部失败返回 null，回退到内置缓存/手动粘贴。
+const FAA_NOTAM_URL = 'https://notams.aim.faa.gov/notamSearch/search';
+let lastNotamSource = '';
+
+function faaTimeToExpires(s) {
+  if (!s || !/^\d{10}$/.test(s)) return '';
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const y = 2000 + parseInt(s.slice(0, 2)), mo = parseInt(s.slice(2, 4)) - 1, d = parseInt(s.slice(4, 6));
+  const hh = s.slice(6, 8), mm = s.slice(8, 10);
+  if (mo < 0 || mo > 11) return '';
+  return `${months[mo]} ${String(d).padStart(2, '0')}, ${y} ${hh}:${mm} UTC`;
+}
+
+function decodeEntities(s) {
+  return String(s == null ? '' : s)
+    .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(parseInt(d, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/&apos;/g, "'").replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+}
+
+function parseFaaNotams(json) {
+  const items = json && (json.notamList || json.notam_list);
+  if (!Array.isArray(items)) return null;
+  const out = [];
+  for (const it of items) {
+    const raw = it.icaoMessage || it.traditionalMessage || it.text || '';
+    let nid = it.notamNumber || '';
+    let qCode = (it.qCode || '').trim().toUpperCase();
+    let eff = '', exp = '', desc = '';
+    if (raw) {
+      let m = raw.match(/Q\)\s*[A-Z]{4}\/([A-Z]{5})/);
+      if (m && !qCode) qCode = m[1];
+      m = raw.match(/B\)\s*(\d{10})/); if (m) eff = faaTimeToExpires(m[1]);
+      m = raw.match(/C\)\s*(\d{10})/); if (m) exp = faaTimeToExpires(m[1]);
+      else if (/C\)\s*(PERM|UFN)/i.test(raw)) exp = 'PERMANENT';
+      m = raw.match(/E\)\s*([\s\S]+?)(?=\s*[FGR]\)|$)/);
+      if (m) desc = m[1].replace(/\s+/g, ' ').trim();
+    }
+    if (!desc) desc = raw.replace(/\s+/g, ' ').trim();
+    if (!desc) continue;
+    desc = decodeEntities(desc);
+    if (!nid) { const mi = raw.match(/([A-Z]\d{3,4}\/\d{2})/); nid = mi ? mi[1] : ''; }
+    out.push({ id: nid, q_code: qCode, priority: '5', effective: eff,
+               expires: exp, desc, expired: notamExpired(exp, nid), online: true });
+  }
+  return out;
+}
+
+async function fetchNotamsOnline(icao) {
+  const form = new URLSearchParams({
+    searchType: '0', designatorsForLocation: icao, notamsOnly: 'false',
+    radius: '10', pageSize: '200', pageNum: '1',
+  }).toString();
+  const H = { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' };
+  const enc = encodeURIComponent(FAA_NOTAM_URL);
+  const channels = [
+    { name: 'FAA直连', url: FAA_NOTAM_URL, opts: { method: 'POST', headers: H, body: form } },
+    { name: '代理:corsproxy.io', url: 'https://corsproxy.io/?' + enc, opts: { method: 'POST', headers: H, body: form } },
+    { name: '代理:cors.lol', url: 'https://api.cors.lol/?url=' + enc, opts: { method: 'POST', headers: H, body: form } },
+    { name: '代理:cors.eu.org', url: 'https://cors.eu.org/' + FAA_NOTAM_URL, opts: { method: 'POST', headers: H, body: form } },
+  ];
+  const attempts = channels.map(c => (async () => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+    try {
+      const r = await fetch(c.url, { ...c.opts, signal: ctrl.signal });
+      if (!r.ok) return null;
+      const txt = await r.text();
+      let j; try { j = JSON.parse(txt); } catch (e) { return null; }
+      const list = parseFaaNotams(j);
+      return (list && list.length) ? { list, source: c.name } : null;
+    } catch (e) {
+      return null;
+    } finally {
+      clearTimeout(timer);
+    }
+  })());
+  return new Promise(resolve => {
+    let pending = attempts.length, done = false;
+    attempts.forEach(p => p.then(res => {
+      if (done) return;
+      if (res) { done = true; resolve(res); }
+      else if (--pending === 0) { done = true; resolve(null); }
+    }));
+  });
+}
+
+function assembleNotams(icao, manualList, mode, onlineList, flightWindow) {
+  mode = mode || 'merge';
+  onlineList = (onlineList && onlineList.length) ? onlineList : null; // null = 未获取/获取失败
+  const result = { active: [], med: [], gnd_check: [], check_time: [], low: [] };
+
+  const cached = (NOTAM_CACHE[icao] || {}).notams || [];
+  const base = onlineList || cached;                 // 在线优先，其次内置缓存
+  const baseActive = base.filter(n => !notamExpired(n.expires, n.id));
+  const baseLabel = onlineList ? '在线' : '缓存';
+  const manualActive = dedupManual((manualList || []).filter(n => !n.expired));
+  // JEP Pro导出是该机场完整通告组 → 整组覆盖
+  const isJep = manualActive.length > 0 && manualActive.every(n => n.jep);
+
+  let notams;
+  if (mode === 'manual') {
+    notams = manualActive;
+    result.source_warning = notams.length > 0
+      ? (isJep ? `JEP Pro通告${notams.length}条(仅以粘贴为准)` : `手动粘贴${notams.length}条(仅以粘贴为准)`)
+      : '手动模式：未粘贴NOTAM，请展开粘贴框粘贴JEP Pro通告';
+  } else if (mode === 'merge' && manualActive.length > 0) {
+    if (isJep) {
+      notams = manualActive;
+      result.source_warning = `JEP Pro通告${notams.length}条(整组覆盖${baseLabel})`;
+    } else {
+      const ids = new Set(manualActive.map(n => n.id));
+      notams = baseActive.filter(n => !ids.has(n.id)).concat(manualActive);
+      result.source_warning = `含手动粘贴${manualActive.length}条(同号覆盖${baseLabel})`;
+    }
+  } else {
+    notams = baseActive;
+    if (onlineList) {
+      result.source_warning = `在线获取${notams.length}条${lastNotamSource ? '(' + lastNotamSource + ')' : ''} · 来源FAA，建议核对JEP Pro`;
+    } else if (baseActive.length > 0) {
+      const fetchedAt = (NOTAM_CACHE[icao] || {}).fetched_at || '';
+      result.source_warning = `在线获取失败，显示缓存(获取于 ${fetchedAt.slice(0, 16).replace('T', ' ')} UTC)，可能过期 · 双击 start.command 可稳定在线`;
+    } else {
+      result.source_warning = `在线获取失败且无缓存 · 可双击 start.command/start.bat 启动服务器(全自动在线)，或展开粘贴框粘贴JEP Pro通告`;
+    }
+  }
+
+  for (const n of notams) {
+    const cat = classifyNotam(n, flightWindow);
+    result[{ 'MED': 'med', 'GND CHECK': 'gnd_check', 'CHECK TIME': 'check_time', 'LOW': 'low' }[cat]].push(n);
+    result.active.push(n);
+  }
+  return result;
+}
+
+// ═══════════════════════ 渲染 (同服务器版) ═══════════════════════
+function tagCls(risk) {
+  return { HIGH: 'tag-high', MED: 'tag-med', LOW: 'tag-low', 'GND CHECK': 'tag-gnd', 'CHECK TIME': 'tag-ck' }[risk] || 'tag-low';
+}
+function lineCls(risk) {
+  return { HIGH: 'risk-high', MED: 'risk-med', LOW: 'risk-low', 'GND CHECK': 'risk-gnd', 'CHECK TIME': 'risk-ck' }[risk] || 'risk-low';
+}
+function tagHtml(risk) { return `<span class="tag ${tagCls(risk)}">${risk}</span>`; }
+
+function renderResult(data) {
+  const el = document.getElementById('result');
+  let html = '';
+  let overallRisk = 'LOW';
+  let conclusionItems = [];
+
+  const arrDateLabel = data.arr_date && data.arr_date !== data.date ? `(${data.arr_date})` : '';
+  html += `<div class="flight-line"><span>✈</span> FLT | ${data.date} | ${data.dep} ${data.dep_time}BJT DEP → ${data.arr} ${data.arr_time}BJT ARR ${arrDateLabel}</div>`;
+
+  if (data.dep_wx) {
+    const w = data.dep_wx;
+    const risk = w.risk || 'LOW';
+    html += `<div class="section"><div class="section-header">WX · ${data.dep} ${data.dep_name || ''}</div>
+      <div class="section-line ${lineCls(risk)}">${tagHtml(risk)}${data.dep} ${data.dep_time}BJT WX | RA ${w.precip}mm / POP ${w.pop}% / WIND ${w.wind_dir}° ${w.wind_spd}mps G${w.wind_gst} / VIS ${w.vis}m / ${w.wx_name} / RISK ${risk}</div></div>`;
+    if (risk === 'HIGH') { overallRisk = 'HIGH'; conclusionItems.push(`起飞场 ${data.dep} ${data.dep_time}BJT WX RISK HIGH`); }
+    else if (risk === 'MED') { if (overallRisk === 'LOW') overallRisk = 'MED'; conclusionItems.push(`起飞场 ${data.dep} ${data.dep_time}BJT WX RISK MED`); }
+  } else {
+    const hint = data.dep_coords_ok === false ? '(无机场坐标，无法获取)' : '';
+    html += `<div class="section"><div class="section-header">WX · ${data.dep} ${data.dep_name || ''}</div><div class="section-line risk-low">WX获取失败${hint}</div></div>`;
+    if (data.dep_coords_ok !== true) conclusionItems.push(`起飞场 ${data.dep} WX数据缺失 — 请人工核实`);
+  }
+
+  if (data.arr_wx && data.arr_wx.vis_1 != null) {
+    const w = data.arr_wx;
+    const risk = w.risk || 'LOW';
+    const arrH = parseInt(data.arr_time.substring(0, 2));
+    html += `<div class="section"><div class="section-header">WX · ${data.arr} ${data.arr_name || ''}</div>
+      <div class="section-line ${lineCls(risk)}">${tagHtml(risk)}${data.arr} ${String(arrH).padStart(2,'0')}00-${String(arrH+1).padStart(2,'0')}00BJT WX | RA ${w.precip_1}-${w.precip_2 != null ? w.precip_2 : w.precip_1}mm / POP ${w.pop_1}-${w.pop_2 != null ? w.pop_2 : w.pop_1}% / WIND ${w.wind_dir_1}-${w.wind_dir_2 != null ? w.wind_dir_2 : w.wind_dir_1}° ${w.wind_spd_1}-${w.wind_spd_2 != null ? w.wind_spd_2 : w.wind_spd_1}mps G${w.wind_gst_1}-${w.wind_gst_2 != null ? w.wind_gst_2 : w.wind_gst_1} / VIS ${w.vis_1}→${w.vis_2 != null ? w.vis_2 : w.vis_1}m / ${w.wx_name_1}-${w.wx_name_2 != null ? w.wx_name_2 : w.wx_name_1} / RISK ${risk}</div></div>`;
+    if (risk === 'HIGH') { overallRisk = 'HIGH'; conclusionItems.push(`到达场 ${data.arr} 落地时段 WX RISK HIGH (VIS ${w.vis_1}m)`); }
+    else if (risk === 'MED') { if (overallRisk === 'LOW') overallRisk = 'MED'; conclusionItems.push(`到达场 ${data.arr} 落地时段 WX ${w.vis_1}→${w.vis_2}m VIS需关注`); }
+  } else {
+    const hint = data.arr_coords_ok === false ? '(无机场坐标，无法获取)' : '';
+    html += `<div class="section"><div class="section-header">WX · ${data.arr} ${data.arr_name || ''}</div><div class="section-line risk-low">WX获取失败${hint}</div></div>`;
+    if (data.arr_coords_ok !== true) conclusionItems.push(`到达场 ${data.arr} WX数据缺失 — 请人工核实`);
+  }
+
+  if (data.taf) {
+    const t = data.taf;
+    if (t.error) {
+      html += `<div class="section"><div class="section-header">TAF · ${data.arr}</div>
+        <div class="section-line risk-low">${tagHtml('LOW')}${data.arr} TAF 不可用 — ${escapeHtml(t.message || '')}</div></div>`;
+      conclusionItems.push(`${data.arr} TAF缺失 — 请粘贴TAF后重新GET BRIEF`);
+    } else {
+      const coverLabel = t.covers ? `COVER ${data.arr_time}BJT` : `NOT COVER ${data.arr_time}BJT`;
+      const tRisk = t.covers ? (t.risk || 'LOW') : 'LOW';
+      const tCls = t.covers && t.risk === 'HIGH' ? 'risk-high' : t.covers && t.risk === 'MED' ? 'risk-med' : 'risk-low';
+      html += `<div class="section"><div class="section-header">TAF · ${data.arr} <span class="count" style="margin-left:auto">${t.source}</span></div>
+        <div class="section-line ${tCls}">${tagHtml(tRisk)}${data.arr} TAF | ISSUE ${t.issue} / VALID ${t.valid} / ${coverLabel}</div>`;
+      if (t.covers) {
+        let wxParts = [`BASE ${t.base}`];
+        if (t.target_groups && t.target_groups.length > 0) {
+          for (const g of t.target_groups) wxParts.push(`<span class="bold">${escapeHtml(g)}</span>`);
+        }
+        html += `<div class="section-line ${tCls}">${tagHtml(t.risk || 'LOW')}${data.arr} TAF WX | ${wxParts.join(' / ')}</div>`;
+        if (t.risk === 'HIGH') { overallRisk = 'HIGH'; conclusionItems.push(`TAF ${data.arr} 落地时段落入TEMPO/PROB窗口`); }
+        else if (t.risk === 'MED') { if (overallRisk === 'LOW') overallRisk = 'MED'; conclusionItems.push(`TAF ${data.arr} 落地时段天气需关注`); }
+      } else {
+        conclusionItems.push(`TAF ${data.arr} 不覆盖落地时段 ${data.arr_time}BJT`);
+      }
+      html += `</div>`;
+    }
+  }
+
+  if (data.dep_notam) {
+    html += renderNotamSection(data.dep_notam, data.dep, data.dep_name);
+    if (data.dep_notam.med && data.dep_notam.med.length > 0) {
+      if (overallRisk === 'LOW') overallRisk = 'MED';
+      conclusionItems.push(`${data.dep} MED: ${data.dep_notam.med.map(n => n.id).join(', ')}`);
+    }
+  }
+  if (data.arr_notam) {
+    html += renderNotamSection(data.arr_notam, data.arr, data.arr_name);
+    if (data.arr_notam.med && data.arr_notam.med.length > 0) {
+      if (overallRisk === 'LOW') overallRisk = 'MED';
+      conclusionItems.push(`${data.arr} MED: ${data.arr_notam.med.map(n => n.id).join(', ')}`);
+    }
+  }
+
+  // 未识别的粘贴文本 → 结论提示 + 末端列出
+  const unrec = data.notam_unrecognized || [];
+  if (unrec.length > 0) {
+    conclusionItems.push(`NOTAM粘贴框有 ${unrec.length} 段文本未能识别，请在结果末端人工核对`);
+  }
+
+  const goNogo = overallRisk === 'HIGH' ? 'NO-GO' : 'GO';
+  const concCls = goNogo === 'NO-GO' ? 'nogo' : 'go';
+  html += `<div class="conclusion ${concCls}">
+    <div class="conclusion-header ${concCls}">${tagHtml(goNogo)} CONCLUSION | ${goNogo === 'NO-GO' ? '建议推迟或备降' : '可正常执行'}</div>
+    <div class="conclusion-body">`;
+  if (conclusionItems.length === 0) {
+    html += `<div class="item">WX / TAF / NOTAM 均无显著风险</div>`;
+  } else {
+    for (const item of conclusionItems) html += `<div class="item">${escapeHtml(item)}</div>`;
+  }
+  html += `</div></div>`;
+
+  // 末端: 未识别文本清单
+  if (unrec.length > 0) {
+    html += `<div class="section">
+      <div class="section-header" style="color:var(--orange);">⚠ 未识别文本 · 请人工核对 <span class="count" style="margin-left:auto;color:var(--orange)">${unrec.length}段</span></div>`;
+    for (const u of unrec) {
+      html += `<div class="section-line" style="background:rgba(210,153,29,0.08);border-left:2px solid var(--orange);color:var(--muted);font-size:11px;">${escapeHtml(u)}</div>`;
+    }
+    html += `</div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+function formatExpiry(n) {
+  const expires = (n && typeof n === 'object') ? n.expires : n;
+  if (!expires) return '';
+  const s = String(expires).toUpperCase();
+  if (s.includes('UFN') || s.includes('UNTIL FURTHER') || s.includes('PERM') || s.includes('永久')) return '永久有效';
+  // 失效时间换算为北京时间展示 (C/K 系列本身即 BJT; A/E/... 系列为 UTC)
+  const id = (n && typeof n === 'object') ? n.id : null;
+  const ms = notamTimeToMs(expires, true, notamSeriesOffsetMs(id));
+  if (ms == null || ms === Infinity || ms === -Infinity) {
+    return expires.length > 24 ? expires.substring(0, 24) + '…' : expires;
+  }
+  const bj = new Date(ms + 8 * 3600000);
+  const p = x => String(x).padStart(2, '0');
+  return `至 ${bj.getUTCFullYear()}-${p(bj.getUTCMonth() + 1)}-${p(bj.getUTCDate())} ${p(bj.getUTCHours())}${p(bj.getUTCMinutes())}BJT`;
+}
+
+function renderNotamSection(notamData, icao, name) {
+  const total = notamData.active ? notamData.active.length : 0;
+  let h = `<div class="section">
+    <div class="section-header">NOTAM · ${icao} ${name || ''} <span class="count" style="margin-left:auto">${total}条有效</span></div>`;
+  if (notamData.source_warning) {
+    h += `<div class="section-line" style="background:rgba(210,153,29,0.1);border-left:2px solid var(--orange);color:var(--orange);font-size:11px;">⚠ ${escapeHtml(notamData.source_warning)}</div>`;
+  }
+  if (total === 0) {
+    h += `<div class="section-line risk-low">${tagHtml('LOW')}无有效NOTAM</div></div>`;
+    return h;
+  }
+  for (const n of (notamData.med || [])) {
+    h += `<div class="section-line risk-med">${tagHtml('MED')}${escapeHtml(n.id)} | ${escapeHtml(summarizeMed(n.desc))}${formatExpiry(n) ? ' | ' + escapeHtml(formatExpiry(n)) : ''}</div>`;
+  }
+  for (const n of (notamData.gnd_check || [])) {
+    h += `<div class="section-line risk-gnd">${tagHtml('GND CHECK')}${escapeHtml(n.id)} | ${escapeHtml(summarizeGnd(n.desc))}${formatExpiry(n) ? ' | ' + escapeHtml(formatExpiry(n)) : ''}</div>`;
+  }
+  for (const n of (notamData.check_time || [])) {
+    h += `<div class="section-line risk-ck">${tagHtml('CHECK TIME')}${escapeHtml(n.id)} | ${escapeHtml(summarizeCheck(n.desc))}${formatExpiry(n) ? ' | ' + escapeHtml(formatExpiry(n)) : ''}</div>`;
+  }
+  for (const n of (notamData.low || [])) {
+    const tNote = (n.timeIrrelevant || n.time_irrelevant) ? '不在生效时间范围内 · ' : '';
+    h += `<div class="section-line risk-low">${tagHtml('LOW')}${escapeHtml(n.id)} | ${tNote}${escapeHtml(summarizeLow(n.desc))}${formatExpiry(n) ? ' | ' + escapeHtml(formatExpiry(n)) : ''}</div>`;
+  }
+  h += `</div>`;
+  return h;
+}
+
+// ═══════════════════════ 中文摘要 ═══════════════════════
+// ── 鸟类活动极简摘要 (CN+EN) ──
+function summarizeBird(desc) {
+  const d = desc.toUpperCase();
+  if (!/鸟击|迁徙鸟|候鸟|猛禽|鸟防|驱鸟|BIRD ACTIVITY|BIRD STRIKE|BIRD HAZARD|FLOCK/.test(desc)
+      && !/BIRD/.test(d)) return null;
+  let r = '';
+  const mR = desc.match(/半径\s*([\d.]+)\s*(?:公里|千米|KM)/i);
+  if (mR) r = mR[1].replace(/\.0+$/, '');
+  const kinds = [];
+  if (/迁徙鸟|候鸟|雁鸭/.test(desc)) kinds.push('候鸟');
+  if (/猛禽|鹰/.test(desc)) kinds.push('猛禽');
+  if (/鹭/.test(desc)) kinds.push('鹭类');
+  if (!kinds.length) kinds.push('鸟类');
+  return `${r ? `半径${r}KM内` : '本场及周边'}${kinds.slice(0, 3).join('/')}活动 · 鸟击风险`;
+}
+
+function summarizeMed(desc) {
+  // ── 鸟类活动：极简优先 ──
+  const bird = summarizeBird(desc);
+  if (bird) return bird;
+  // ── 障碍物(含影响一发失效/性能) ──
+  if (/OBSTACLE|CRANE|WIND TURBINE|OBST ID/.test(desc.toUpperCase()) || /障碍物|塔吊|吊车/.test(desc)) {
+    const s = summarizeObstacle(desc);
+    if (s) return s;
+  }
+  // ── 中文障碍物影响优先提取（关键核心）──
+  const cnImpact = extractCnImpact(desc);
+  if (cnImpact) return cnImpact;
+  const d = desc.toUpperCase();
+  // ── 中文滑行道关闭 (名称在前: "B滑行道关闭,因不停航施工") ──
+  const twyCn = desc.match(/([A-Z0-9]{1,5})\s*滑行道\s*(?:关闭|不可用|CLSD)/);
+  if (twyCn) return `滑行道${twyCn[1]}关闭${/不停航施工/.test(desc) ? '(不停航施工)' : ''}`;
+  const twyClsd = d.match(/TWY\s+(\w[\w-]*)\s+CLSD\s+BTN\s+(?:TWY\s+)?(\w[\w-]*)\s+AND\s+(?:TWY\s+)?(\w[\w-]*)/);
+  if (twyClsd) return `滑行道${twyClsd[1]}关闭(${twyClsd[2]}-${twyClsd[3]})`;
+  const twyClsd2 = d.match(/TWY\s+(\w[\w-]*)\s+CLSD/);
+  if (twyClsd2) return `滑行道${twyClsd2[1]}关闭`;
+  const rw = d.match(/\b(?:RWY|RUNWAY)\s*([\dRLC/]+)\s*(?:CLSD|CLOSED)/);
+  if (rw) return `跑道${rw[1]}关闭`;
+  if (d.includes('RWY DISTANCE REDUCED')) return '跑道可用距离缩短';
+  if (d.includes('TORA CHANGED')) return '可用起飞滑跑距离变更';
+  if (d.includes('TODA CHANGED')) return '可用起飞距离变更';
+  if (d.includes('ASDA CHANGED')) return '可用加速停止距离变更';
+  if (d.includes('LDA CHANGED')) return '可用着陆距离变更';
+  if (d.includes('TAKE-OFF FLIGHT PATH') && d.includes('AFFECTED')) return '起飞航径受影响';
+  if (d.includes('PROCEDURE') && d.includes('AFFECTED')) return '飞行程序受影响';
+  if (d.includes('MINIMA CHANGED')) return '最低标准变更';
+  if (d.includes('CLIMB GRADIENT')) return '爬升梯度要求';
+  const first = desc.split(/[.;。；]/)[0].trim();
+  return first.length > 120 ? first.substring(0, 120) + '…' : first;
+}
+
+function summarizeGnd(desc) {
+  const d = desc.toUpperCase();
+  // ── 中文滑行转向限制 ("在E滑行道滑行时,不得左转进入J1滑行道") ──
+  const cnTurns = [];
+  const reTurn = /在\s*([A-Z0-9]{1,5})\s*滑行道滑行时[，,]?\s*不得(左|右)转进入\s*([A-Z0-9]{1,5})\s*滑行道/g;
+  let tm;
+  while ((tm = reTurn.exec(desc)) !== null) cnTurns.push(`${tm[1]}滑行不得${tm[2]}转${tm[3]}`);
+  if (cnTurns.length) return '新增限制：' + cnTurns.map((t, i) => `${i + 1}.${t}`).join(' · ');
+  // ── 清单式关闭 (EN: "TWY CLSD DUE TO WIP DETAIL AS FLW: -TWY K BTN ... -TWY J3 -TWY J4") ──
+  if (/\b(?:TWY|TXL)\s+CLSD\b/.test(d) || /CLOSURE OF TWY/.test(d)) {
+    const names = [];
+    const re = /\b(?:TWY|TXL)\s+([A-Z][A-Z0-9]{0,2})(?=\s|$)/g;
+    let nm;
+    while ((nm = re.exec(d)) !== null) {
+      if (!names.includes(nm[1])) names.push(nm[1]);
+    }
+    const isTxl = /\bTXL\b/.test(d) && !/\bTWY\s+[A-Z]/.test(d);
+    const kind = isTxl ? '联络道' : '滑行道';
+    if (names.length) return `${kind}${names.slice(0, 8).join('/')}部分关闭(施工)`;
+    return `${kind}多段关闭(施工)`;
+  }
+  const twyMulti = d.match(/TWY\s+(\w[\w-]*)\s+(BTN\s+.+?CLSD)/);
+  if (twyMulti) {
+    const twy = twyMulti[1];
+    const clause = twyMulti[2];
+    const intervals = [];
+    const re = /BTN\s+(?:INT\s+|TWY\s+)?(\w[\w-]*)\s+AND\s+(?:INT\s+|TWY\s+)?(\w[\w-]*)/g;
+    let mm;
+    while ((mm = re.exec(clause)) !== null) intervals.push(`${mm[1]}-${mm[2]}`);
+    if (intervals.length >= 2) {
+      const first = intervals[0].split('-')[0];
+      const last = intervals[intervals.length - 1].split('-')[1];
+      return `滑行道${twy}部分关闭(${first}-${last})`;
+    }
+    if (intervals.length === 1) return `滑行道${twy}部分关闭(${intervals[0]})`;
+  }
+  const twyFmTil = d.match(/TWY\s+(\w[\w-]*)\s+FM\s+(.*?)\s+TIL\s+(.*?)\s+CLSD/);
+  if (twyFmTil) return `滑行道${twyFmTil[1]}部分关闭(${twyFmTil[2]}至${twyFmTil[3]})`;
+  const twyAbm = d.match(/TWY\s+(\w[\w-]*)\s+ABM\s+(.*?)\s+CLSD/);
+  if (twyAbm) return `滑行道${twyAbm[1]}部分关闭(ABM ${twyAbm[2]})`;
+  if (d.includes('FORBIDDEN TO TURN LEFT') && d.includes('FORBIDDEN TO TURN RIGHT')) {
+    const twyFrom = d.match(/TAXI IN\s+TWY\s+(\w[\w-]*)/);
+    if (twyFrom) return `滑行道${twyFrom[1]}双向转弯受限`;
+    return '滑行道转弯方向受限';
+  }
+  if (d.includes('FORBIDDEN TO TURN LEFT')) {
+    const twyFrom = d.match(/TAXI IN\s+TWY\s+(\w[\w-]*)/);
+    const twyTo = d.match(/TURN LEFT TO\s+TWY\s+(\w[\w-]*)/);
+    if (twyFrom && twyTo) return `${twyFrom[1]}禁左转${twyTo[1]}`;
+    return '滑行道禁左转';
+  }
+  if (d.includes('FORBIDDEN TO TURN RIGHT')) {
+    const twyFrom = d.match(/TAXI IN\s+TWY\s+(\w[\w-]*)/);
+    const twyTo = d.match(/TURN RIGHT TO\s+TWY\s+(\w[\w-]*)/);
+    if (twyFrom && twyTo) return `${twyFrom[1]}禁右转${twyTo[1]}`;
+    return '滑行道禁右转';
+  }
+  if (d.includes('TURN RIGHT TO') && d.includes('WINGSPAN')) {
+    const twy = d.match(/TWY\s+(\w[\w-]*)\s+EASTBOUND/);
+    const to = d.match(/TURN RIGHT TO\s+TWY\s+(\w[\w-]*)/);
+    const ws = d.match(/NOT MORE THAN\s*(\d+)\s*M/);
+    if (twy && to && ws) return `${twy[1]}东行仅限右转${to[1]}(翼展≤${ws[1]}M)`;
+    return '滑行道转弯翼展限制';
+  }
+  if (d.includes('TURN RESTRICTION')) return '滑行道转弯限制';
+  const first = desc.split(/[.;。；]/)[0].trim();
+  return first.length > 120 ? first.substring(0, 120) + '…' : first;
+}
+
+function summarizeCheck(desc) {
+  const d = desc.toUpperCase();
+  if (d.includes('VOR/DME') && d.includes('U/S')) {
+    const name = d.match(/(\w+)\s+VOR\/DME/);
+    const freq = d.match(/(\d+\.\d+)\s*MHZ/);
+    if (name && freq) return `${name[1]} VOR/DME ${freq[1]}MHz 不工作`;
+    if (name) return `${name[1]} VOR/DME 不工作`;
+    return 'VOR/DME不工作';
+  }
+  if (d.includes('ILS') && d.includes('U/S')) {
+    const rwy = d.match(/RWY\s*(\w[\w-]*)/);
+    if (rwy) return `跑道${rwy[1]} ILS 不工作`;
+    return 'ILS不工作';
+  }
+  if (d.includes('DME') && d.includes('U/S')) {
+    const rwy = d.match(/RWY\s*(\w[\w-]*)/);
+    if (rwy) return `跑道${rwy[1]} DME 不工作`;
+    return 'DME不工作';
+  }
+  if (d.includes('DUE TO') && (d.includes('SID') || d.includes('STAR') || d.includes('IAC'))) {
+    const cause = d.match(/DUE TO\s+(.+?)\s+U\/S/);
+    const cn = cause ? cause[1].trim() : '';
+    if (d.includes('SID')) return cn ? `因${cn}不工作 SID程序暂停` : 'SID程序暂停使用';
+    if (d.includes('STAR')) return cn ? `因${cn}不工作 STAR程序暂停` : 'STAR程序暂停使用';
+    if (d.includes('IAC')) return cn ? `因${cn}不工作 进近程序暂停` : '进近程序暂停使用';
+  }
+  if (d.includes('LIMITED TO USE')) {
+    const name = d.match(/(\w+)\s+VOR\/DME/);
+    return name ? `${name[1]} VOR/DME 使用受限` : '导航台使用受限';
+  }
+  const first = desc.split(/[.;。；]/)[0].trim();
+  return first.length > 120 ? first.substring(0, 120) + '…' : first;
+}
+
+// ── 障碍物/塔吊专用简练摘要 (EN+CN) ──
+function summarizeObstacle(desc) {
+  const d = desc.toUpperCase();
+  if (!/OBSTACLE|CRANE|WIND TURBINE|OBST ID/.test(d) && !/障碍物|塔吊|吊车/.test(desc)) return null;
+  // 半径 (RADIUS OF 15KM / 半径15千米)
+  let radius = '';
+  const mR = d.match(/RADIUS\s+OF\s*([\d.]+)\s*KM/) || desc.match(/半径\s*([\d.]+)\s*(?:千米|公里|KM)/);
+  if (mR) radius = mR[1].replace(/\.0+$/, '');
+  // 真实影响 (EN: "ALL CRANE AFFECT ONE ENGINE FAILURE PERFORMANCE FOR RWY19L")
+  let impact = '';
+  const impEn = d.match(/AFFECTS?\s+(ONE ENGINE FAILURE|OEI)\s+PERFORMANCE(?:\s+FOR\s+RWY\s*([\dRL/]+))?/);
+  if (impEn) impact = `影响${impEn[2] ? 'RWY' + impEn[2] : ''}一发失效性能`;
+  // 真实影响 (CN: 备注/正文明确指出性能或程序受影响)
+  if (!impact) {
+    let imp = desc.match(/影响\s*RWY\s*[\dRL/]+[^。；;\n]*?(?:性能|程序|起飞|一发失效)/);
+    if (!imp) imp = desc.match(/备注[:：]\s*([^。；;\n]*?(?:性能|程序)[^。；;\n]*)/);
+    if (imp) impact = imp[0].replace(/\s+/g, ' ').trim();
+  }
+  // 类型与数量
+  let type = '临时障碍物', count = 0;
+  if (/CRANE/.test(d) || /塔吊|吊车/.test(desc)) {
+    type = '施工塔吊';
+    const rows1 = d.match(/CRANE\s+\d*\s*CRANE/g) || [];      // "CRANE CRANE 319/5,800"
+    const rows2 = d.match(/CRANE\s+\d{1,3}[\/,]\d/g) || [];    // "CRANE 211/7,768"
+    count = Math.max(rows1.length, rows2.length) || (desc.match(/\d+\s*号塔吊/g) || []).length;
+  } else if (/WIND TURBINE/.test(d)) {
+    type = '风电机组';
+  }
+  // 无影响声明
+  const noInfl = /NO INFLUENCE ON TAKEOFF AND LANDING PERFORMANCE|NO IMPACT ON TAKE-?OFF/.test(d)
+    || /对起飞和着陆性能(均)?无影响|对起降性能(均)?无影响|对性能无影响/.test(desc);
+  // 组装
+  let s = (radius ? `半径${radius}KM内` : '') + `新增${type}`;
+  if (count > 0) s += `(${count}座)`;
+  if (impact) s += ` · ${impact}`;
+  else if (noInfl) s += ' · 对起降性能无影响';
+  return s;
+}
+
+function summarizeLow(desc) {
+  const d = desc.toUpperCase();
+  // ── 鸟类活动：极简优先 ──
+  const bird = summarizeBird(desc);
+  if (bird) return bird;
+  // ── 障碍物/塔吊 (EN+CN): 统一生成简练摘要 ──
+  if (/OBSTACLE|CRANE|WIND TURBINE|OBST ID/.test(d) || /障碍物|塔吊|吊车/.test(desc)) {
+    const s = summarizeObstacle(desc);
+    if (s) return s;
+  }
+  // ── 中文障碍物通告：优先提取影响信息 ──
+  const cnImpact = extractCnImpact(desc);
+  if (cnImpact) return cnImpact;
+  // ── 英文模式 ──
+  if ((d.includes('PARKING STAND') || d.includes('PRKG STAND')) && d.includes('CLSD')) {
+    const m = d.match(/(?:PARKING|PRKG)\s+STAND\s*([\w,]+)/);
+    if (m) return `停机位${m[1].replace(/,/g, '、')}关闭`;
+    return '停机位关闭';
+  }
+  if (d.includes('WING') && d.includes('SPAN') && d.includes('NOT MORE THAN')) {
+    const m = d.match(/NOT MORE THAN\s*(\d+)/);
+    return m ? `翼展≤${m[1]}M限制` : '翼展限制';
+  }
+  if (d.includes('BIRD')) return '鸟群活动注意';
+  if (d.includes('WIND TURBINE')) return '风电机组障碍物';
+  // 机场周围新增临时障碍物 (带半径信息)
+  if (/OBSTACLES?\s+WITHIN\s+A\s+CIRCLE/.test(d)) {
+    const m = d.match(/RADIUS OF\s*(\d+)KM/);
+    return m ? `新增临时障碍物(半径${m[1]}KM内)` : '新增临时障碍物';
+  }
+  if (d.includes('CRANE') || /\bOBST\b/.test(d) || d.includes('OBSTACLES')) {
+    const m = d.match(/(\d{3})\/\s*(\d+\.?\d*)\s*KM/);
+    if (m) return `障碍物(${m[1]}°/${m[2]}KM)`;
+    const hgt = d.match(/HGT\s*(?:FM\s*GND\s*)?(\d+)M/);
+    if (hgt) return `吊车障碍物 高${hgt[1]}M`;
+    return '临时障碍物';
+  }
+  if (d.includes('AD ADD LIMITATION')) {
+    const m = d.match(/TWY\s+(\w[\w-]*)/);
+    return m ? `机场附加限制(${m[1]}滑行路线)` : '机场附加滑行限制';
+  }
+  // 跑道关闭(含因施工 WIP 关闭): 保留"跑道关闭"性质, 避免被 WIP 兜底成"施工区域注意"
+  const rwClsd = d.match(/\b(?:RWY|RUNWAY)\s*([\dRLC/]+)\s*(?:CLSD|CLOSED)/);
+  if (rwClsd) return `跑道${rwClsd[1]}关闭`;
+  if (d.includes('TWY') && d.includes('CLSD')) {
+    const m = d.match(/TWY\s+([A-Z][A-Z0-9]{0,2})(?=\s|$)/);
+    return m ? `滑行道${m[1]}关闭` : '滑行道关闭(时段无关)';
+  }
+  if (d.includes('UA ACT') || d.includes('MIL UA')) {
+    const m = d.match(/SFC-(\d+)M AGL/);
+    return m ? `无人机活动(高度${m[1]}M内)` : '无人机/空域活动注意';
+  }
+  if (d.includes('PARAMOTOR')) return '动力伞活动注意';
+  if (d.includes('WIP')) return '施工区域注意';
+  // 兜底: 取第一句做极简摘要，保证LOW项总有中文提示
+  const first = desc.split(/[.;。；]/)[0].trim();
+  return first.length > 80 ? first.substring(0, 80) + '…' : (first || '低影响项');
+}
+
+// ── 中文障碍物通告摘要：提取核心影响 ──
+function extractCnImpact(desc) {
+  if (!hasChinese(desc)) return null;
+  // 模式1: 备注行明确写了影响
+  const note = desc.match(/备注[:：]\s*(.+?)(?:[。；\n]|$)/);
+  if (note) {
+    const n = note[1];
+    // "影响RWY19L一发失效性能" → 提取完整
+    const imp = n.match(/影响.*?(?:性能|程序|起飞|着陆|进近|爬升|一发失效)/);
+    if (imp) return imp[0];
+    // "所有临时塔吊影响RWY19L一发失效性能,请航司做好性能评估"
+    // 或者更宽泛的匹配
+    const imp2 = n.match(/(?:影响|对).*?(?:性能|程序)/);
+    if (imp2) return imp2[0];
+    // 备注里有说明但无性能影响关键词
+    return n.length > 40 ? n.substring(0, 40) + '…' : n;
+  }
+  // 模式2: 正文中直接提及影响
+  const impact = desc.match(/影响\s*RWY\s*\d+[RL]?\s*.*?(?:性能|程序|起飞|一发失效)/);
+  if (impact) return impact[0];
+  const impact2 = desc.match(/影响(?!的飞行程序).*?(?:起飞航径区|进近|着陆)/);
+  if (impact2) return impact2[0];
+  // 模式3: 是障碍物通告但无影响
+  if (/障碍物|塔吊|吊车|OBST|CRANE/.test(desc)) {
+    if (/影响的飞行程序.*无/.test(desc) || /无性能影响/.test(desc)) return '障碍物(无程序影响)';
+    if (/机场.*公里.*新增临时障碍物/.test(desc) || /临时障碍物.*半径/.test(desc)) {
+      const m = desc.match(/(\d+)\s*公里/);
+      return m ? `新增临时障碍物(半径${m[1]}KM, 无程序影响)` : '新增临时障碍物(无程序影响)';
+    }
+    // 有障碍物列表但未提影响 → 极简
+    if (/标高|航空障碍灯|磁方位/.test(desc)) return '障碍物(无程序影响)';
+    return null; // 让上面英文模式兜底
+  }
+  return null;
+}
+
+// ═══════════════════════ 粘贴实时识别反馈 ═══════════════════════
+function updatePasteFeedback() {
+  const fb = document.getElementById('paste_feedback');
+  if (!fb) return;
+  const text = document.getElementById('manual_notam').value.trim();
+  if (!text) { fb.textContent = ''; return; }
+  const parsed = parseManualNotams(text);
+  const total = Object.values(parsed.byAirport).reduce((s, l) => s + l.length, 0);
+  const unrec = (parsed.unrecognized || []).length;
+  if (total > 0) {
+    const detail = Object.entries(parsed.byAirport).map(([icao, l]) => `${icao} ${l.length}条`).join(' · ');
+    fb.textContent = `✓ 已识别 ${total} 条通告: ${detail}` + (unrec > 0 ? ` · ⚠ ${unrec}段未识别` : '');
+    fb.style.color = 'var(--accent2)';
+  } else {
+    fb.textContent = unrec > 0
+      ? `✗ 未识别到通告 · ${unrec}段文本将在结果末端列出（ICAO格式需含 "A) 机场代码" 行）`
+      : '✗ 未识别到通告（ICAO格式需含 "A) 机场代码" 行，如 "A) WMKK"）';
+    fb.style.color = 'var(--red)';
+  }
+}
+document.getElementById('manual_notam').addEventListener('input', updatePasteFeedback);
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: aviation-brief
+    runtime: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python3 server.py"
+    envVars:
+      - key: AVBRIEF_NO_BROWSER
+        value: "1"
+      - key: PYTHON_VERSION
+        value: "3.12.6"
