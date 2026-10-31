@@ -1623,6 +1623,28 @@ AGENT_SYSTEM_PROMPT = """你是航空运行方向的 WX / TAF / NOTAM 判读智�
 }
 notam_judgments 必须覆盖输入中的每一条通告（含 LOW），一条不漏；summary 全部用中文。"""
 
+AGENT_SCOPE_PROMPT = """
+
+【输出模式 B：仅修正（默认）】
+上面的「输出 JSON 结构」在本模式下改为：
+{
+  "conclusion": {"risk": "HIGH|MED|LOW", "headline": "一句话", "factors": ["..."], "actions": ["..."]},
+  "corrections": [
+    {"id": "A2923/26", "level": "HIGH|MED|GND CHECK|CHECK TIME|LOW", "summary": "中文精简判读"}
+  ],
+  "taf_note": "TAF 要点",
+  "wx_note": "WX 要点",
+  "notes": ["提示"]
+}
+- 核心原则：**只有「等级需要改判」或「规则摘要无法覆盖」时才输出 correction**。如果你判定的 level 与输入中的参考等级相同，且该条属于常见固定模式（滑行道/跑道/停机位关闭、导航设施 U/S、塔吊等），一律不要输出。
+- HIGH 必须全部列出（只有参考等级已是 HIGH 且摘要清楚时可不列）。
+- MED / GND CHECK / CHECK TIME 只列需要改判、或复杂区段（BTN/INT/多段同时关闭）规则摘要表达不清的。
+- 无法用固定规则归类的通告（TRIGGER NOTAM、AIP 修订、长清单等）需要给出中文摘要。
+- 不要为凑数输出；corrections 可以为空数组，且**最多 12 条**（优先 HIGH、改判项与长尾，其余一律省略）。
+- level 可省略（只补摘要时），summary 也可省略（只改等级时）。
+- conclusion / taf_note / wx_note / notes 的要求与前面完全相同。"""
+
+
 def _llm_cfg(payload):
     llm = payload.get('llm') if isinstance(payload, dict) else None
     llm = llm if isinstance(llm, dict) else {}
@@ -1784,6 +1806,63 @@ def _agent_notam_block(label, icao, nd):
         rows.append(f'（另有 {len(active) - AGENT_NOTAM_LIMIT} 条通告未列出，沿用规则引擎结果）')
     return head + '\n' + '\n'.join(rows)
 
+def _repair_json(t):
+    """尽力修复被 max_tokens 截断的 JSON（补全字符串与括号）。"""
+    stack, in_str, esc = [], False, False
+    for ch in t:
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == '\\':
+                esc = True
+            elif ch == '"':
+                in_str = False
+        else:
+            if ch == '"':
+                in_str = True
+            elif ch in '{[':
+                stack.append(ch)
+            elif ch in '}]':
+                if stack:
+                    stack.pop()
+    s = t
+    if in_str:
+        if s.endswith('\\'):
+            s = s[:-1]
+        s += '"'
+    s = s.rstrip()
+    if s.endswith(','):
+        s = s[:-1]
+    # 截断在 key/value 中间时，去掉最后一个不完整的成员
+    while True:
+        try:
+            json.loads(s + ''.join('}' if c == '{' else ']' for c in reversed(stack)))
+            break
+        except Exception:
+            cut = max(s.rfind(','), s.rfind('{'), s.rfind('['))
+            if cut < 0:
+                return None
+            s = s[:cut].rstrip()
+            # 重新计算栈
+            stack, in_str, esc = [], False, False
+            for ch in s:
+                if in_str:
+                    if esc:
+                        esc = False
+                    elif ch == '\\':
+                        esc = True
+                    elif ch == '"':
+                        in_str = False
+                else:
+                    if ch == '"':
+                        in_str = True
+                    elif ch in '{[':
+                        stack.append(ch)
+                    elif ch in '}]':
+                        if stack:
+                            stack.pop()
+    return s + ''.join('}' if c == '{' else ']' for c in reversed(stack))
+
 def _extract_json(text):
     if not text:
         return None
@@ -1799,7 +1878,14 @@ def _extract_json(text):
         try:
             return json.loads(t[i:j + 1])
         except Exception:
-            return None
+            pass
+    if i >= 0:
+        fixed = _repair_json(t[i:])
+        if fixed:
+            try:
+                return json.loads(fixed)
+            except Exception:
+                return None
     return None
 
 def run_agent(params, cfg):
@@ -1836,18 +1922,21 @@ def run_agent(params, cfg):
         user += f'\n\n【用户粘贴的 NOTAM（JEP Pro/官方，优先采用，同号覆盖）】\n{manual_notam[:20000]}'
     user += '\n\n请按规则判读，只输出 JSON。'
 
+    scope = 'full' if str(params.get('ai_scope') or '').lower() in ('full', 'a') else 'override'
+    system = AGENT_SYSTEM_PROMPT if scope == 'full' else AGENT_SYSTEM_PROMPT + AGENT_SCOPE_PROMPT
     messages = [
-        {'role': 'system', 'content': AGENT_SYSTEM_PROMPT},
+        {'role': 'system', 'content': system},
         {'role': 'user', 'content': user},
     ]
     t1 = time.time()
+    mt = 6000 if scope == 'full' else 4000
     try:
         resp = llm_chat(messages, None, cfg, timeout=180, temperature=0,
-                        response_format={'type': 'json_object'}, max_tokens=2400)
+                        response_format={'type': 'json_object'}, max_tokens=mt)
     except RuntimeError as e:
         # 兼容端点可能不支持 response_format → 去掉后重试一次
         if 'HTTP 400' in str(e) or 'HTTP 422' in str(e):
-            resp = llm_chat(messages, None, cfg, timeout=180, temperature=0, max_tokens=2400)
+            resp = llm_chat(messages, None, cfg, timeout=180, temperature=0, max_tokens=mt)
         else:
             raise
     llm_ms = int((time.time() - t1) * 1000)
@@ -1863,13 +1952,24 @@ def run_agent(params, cfg):
     if not isinstance(ai, dict):
         raise RuntimeError('AI 输出不是有效 JSON：' + (msg.get('content') or '')[:120])
 
+    if scope == 'override':
+        corr = ai.get('corrections')
+        if not isinstance(corr, list):
+            corr = ai.get('notam_judgments') if isinstance(ai.get('notam_judgments'), list) else []
+        ai['corrections'] = corr
+        ai['notam_judgments'] = corr
+    else:
+        js = ai.get('notam_judgments')
+        ai['notam_judgments'] = js if isinstance(js, list) else []
+
     def _count(key):
         nd = data.get(key)
         return len(nd.get('active') or []) if isinstance(nd, dict) else 0
 
     meta = {'prefetch_ms': prefetch_ms, 'llm_ms': llm_ms,
             'notam_count': _count('dep_notam') + _count('arr_notam'),
-            'prompt_chars': len(user)}
+            'prompt_chars': len(user), 'scope': scope,
+            'corrections': len(ai.get('notam_judgments') or [])}
     return ai, meta, usage
 
 _LEVEL_ALIASES = {
@@ -2100,6 +2200,8 @@ def agent_brief(params):
         'prefetch_ms': meta.get('prefetch_ms', 0),
         'llm_ms': meta.get('llm_ms', 0),
         'notam_count': meta.get('notam_count', 0),
+        'scope': meta.get('scope', 'full'),
+        'corrections': meta.get('corrections', 0),
         'prompt_chars': meta.get('prompt_chars', 0),
         'usage': usage,
         'conclusion': ai.get('conclusion') or {},

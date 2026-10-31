@@ -263,6 +263,12 @@ if ('serviceWorker' in navigator) {
       <div class="llm-status" id="ai-hint"></div>
     </div>
     <div class="settings-group">
+      <div class="group-label">AI 判读粒度</div>
+      <label class="radio-opt"><input type="radio" name="ai_scope" value="override" onchange="onSettingChange()"><span>精简 — 只修正规则判错与长尾通告（默认，快）</span></label>
+      <label class="radio-opt"><input type="radio" name="ai_scope" value="full" onchange="onSettingChange()"><span>逐条 — 每条都由模型确认（诊断用，慢）</span></label>
+      <div class="llm-status" id="scope-hint"></div>
+    </div>
+    <div class="settings-group">
       <div class="group-label">大模型配置（AI 模式）</div>
       <div class="cfg-row">
         <select class="cfg-input" id="llm_provider" onchange="onProviderChange()">
@@ -671,12 +677,13 @@ const LLM_PRESETS = {
 };
 
 function getSettings() {
-  let notam_mode = 'merge', taf_mode = 'auto', ai_mode = 'rules';
+  let notam_mode = 'merge', taf_mode = 'auto', ai_mode = 'rules', ai_scope = 'override';
   let provider = 'modelscope', base = '', model = '', api_key = '';
   try {
     notam_mode = localStorage.getItem('av_notam_mode') || 'merge';
     taf_mode = localStorage.getItem('av_taf_mode') || 'auto';
     ai_mode = localStorage.getItem('av_ai_mode') || 'rules';
+    ai_scope = localStorage.getItem('av_ai_scope') || 'override';
     provider = localStorage.getItem('av_llm_provider') || 'modelscope';
     base = localStorage.getItem('av_llm_base') || '';
     model = localStorage.getItem('av_llm_model') || '';
@@ -691,7 +698,7 @@ function getSettings() {
   const preset = LLM_PRESETS[provider] || LLM_PRESETS.custom;
   const base_url = base || preset.base;
   return {
-    notam_mode, taf_mode, ai_mode,
+    notam_mode, taf_mode, ai_mode, ai_scope,
     llm: {
       provider, base_url, model: model || preset.model, api_key,
       // 魔搭 Qwen3.5 为混合推理模型，关闭思考链可避免 40s+ 延迟与输出截断
@@ -714,6 +721,10 @@ function syncSettingsUI() {
     r.checked = r.value === s.ai_mode;
     r.closest('label').classList.toggle('checked', r.checked);
   });
+  document.querySelectorAll('input[name="ai_scope"]').forEach(r => {
+    r.checked = r.value === s.ai_scope;
+    r.closest('label').classList.toggle('checked', r.checked);
+  });
   const p = document.getElementById('llm_provider');
   if (p) p.value = s.llm.provider;
   const b = document.getElementById('llm_base');
@@ -727,8 +738,12 @@ function syncSettingsUI() {
 
 function updateAiHint() {
   const el = document.getElementById('ai-hint');
-  if (!el) return;
+  const sh = document.getElementById('scope-hint');
   const s = getSettings();
+  if (sh) sh.textContent = s.ai_scope === 'full'
+    ? '诊断模式：模型逐条输出等级与摘要，约 12–18s，用于排查规则/模型判错。'
+    : '精简模式：模型只修正规则判错与长尾通告，约 6–10s。';
+  if (!el) return;
   if (s.ai_mode !== 'ai') { el.className = 'llm-status'; el.textContent = ''; return; }
   if (!SERVER_MODE) {
     el.className = 'llm-status err';
@@ -748,10 +763,12 @@ function onSettingChange() {
   const nm = document.querySelector('input[name="notam_mode"]:checked');
   const tm = document.querySelector('input[name="taf_mode"]:checked');
   const am = document.querySelector('input[name="ai_mode"]:checked');
+  const as = document.querySelector('input[name="ai_scope"]:checked');
   try {
     if (nm) localStorage.setItem('av_notam_mode', nm.value);
     if (tm) localStorage.setItem('av_taf_mode', tm.value);
     if (am) localStorage.setItem('av_ai_mode', am.value);
+    if (as) localStorage.setItem('av_ai_scope', as.value);
   } catch (e) {}
   syncSettingsUI();
 }
@@ -1087,6 +1104,7 @@ async function fetchBrief() {
         manual_taf: manualTaf,
         notam_mode: settings.notam_mode,
         taf_mode: settings.taf_mode,
+        ai_scope: settings.ai_scope,
       };
       let aiFailed = null;
       if (settings.ai_mode === 'ai') {
@@ -1841,11 +1859,18 @@ function renderAICard(ai) {
   const sec = ((ai.elapsed_ms || 0) / 1000).toFixed(1);
   const cnt = ai.notam_count || 0;
   const lms = ai.llm_ms ? ` · 模型 ${(ai.llm_ms / 1000).toFixed(1)}s` : '';
-  let h = `<div class="ai-card"><div class="ai-head">🤖 AI 判读 ${tag}<span class="count">${escapeHtml(ai.model || '')} · ${sec}s · 单次判读 ${cnt} 条通告${lms}</span></div><div class="ai-body">`;
+  const scopeTxt = ai.scope === 'full'
+    ? `逐条判读 ${cnt} 条通告`
+    : `修正 ${ai.corrections || 0}/${cnt} 条`;
+  let h = `<div class="ai-card"><div class="ai-head">🤖 AI 判读 ${tag}<span class="count">${escapeHtml(ai.model || '')} · ${sec}s · ${scopeTxt}${lms}</span></div><div class="ai-body">`;
   if (c.headline) h += `<div class="ai-line"><span class="k">结论</span>${escapeHtml(c.headline)}</div>`;
   if (ai.wx_note) h += `<div class="ai-line"><span class="k">WX</span>${escapeHtml(ai.wx_note)}</div>`;
   if (ai.taf_note) h += `<div class="ai-line"><span class="k">TAF</span>${escapeHtml(ai.taf_note)}</div>`;
-  if (ai.judgments) h += `<div class="ai-line"><span class="k">NOTAM</span>大模型判读 ${ai.judgments} 条，等级与摘要在下方通告中</div>`;
+  if (ai.scope === 'full') {
+    if (ai.judgments) h += `<div class="ai-line"><span class="k">NOTAM</span>大模型逐条判读 ${ai.judgments} 条，等级与摘要在下方通告中</div>`;
+  } else {
+    h += `<div class="ai-line"><span class="k">NOTAM</span>模型修正 ${ai.corrections || 0} 条；其余按规则引擎判读</div>`;
+  }
   for (const n of (ai.notes || [])) h += `<div class="ai-line" style="color:var(--orange);">⚠ ${escapeHtml(n)}</div>`;
   h += `</div></div>`;
   return h;
