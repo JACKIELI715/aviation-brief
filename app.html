@@ -1956,13 +1956,14 @@ function renderResult(data) {
     const tCls = t.covers && t.risk === 'HIGH' ? 'risk-high' : t.covers && t.risk === 'MED' ? 'risk-med' : 'risk-low';
     html += `<div class="section"><div class="section-header">TAF · ${icao} <span class="count" style="margin-left:auto">${t.source}</span></div>
       <div class="section-line ${tCls}">${tagHtml(tRisk)}${icao} TAF | ISSUE ${t.issue} / VALID ${t.valid} / ${coverLabel}</div>`;
+    const hiGroups = t.covers ? [...(t.target_groups || []), ...(t.impact_groups || [])] : [];
     if (t.raw) {
-      html += `<div class="section-line ${tCls}">${tagHtml(tRisk)}${icao} TAF | ${tafRawHtml(t.raw, t.covers ? t.target_groups : [])}</div>`;
+      html += `<div class="section-line ${tCls}">${tagHtml(tRisk)}${icao} TAF | ${tafRawHtml(t.raw, hiGroups)}</div>`;
     }
     if (t.covers) {
-      let wxParts = [`BASE ${t.base}`];
-      if (t.target_groups && t.target_groups.length > 0) {
-        for (const g of t.target_groups) wxParts.push(`<span class="bold">${escapeHtml(g)}</span>`);
+      let wxParts = [t.base || ''];
+      if (hiGroups.length > 0) {
+        for (const g of hiGroups) wxParts.push(`<span class="bold">${escapeHtml(g)}</span>`);
       }
       html += `<div class="section-line ${tCls}">${tagHtml(t.risk || 'LOW')}${icao} TAF WX | ${wxParts.join(' / ')}</div>`;
       if (t.risk === 'HIGH') { overallRisk = 'HIGH'; conclusionItems.push(`TAF ${icao} ${roleLabel}时段落入TEMPO/PROB窗口`); }

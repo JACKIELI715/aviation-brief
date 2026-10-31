@@ -468,27 +468,28 @@ def taf_valid_covers(valid_str, target_utc_h, target_utc_m, date_str):
     except:
         return False
 
-def taf_target_in_group(valid_str, group_str, target_utc_h, target_utc_m, date_str):
-    """Check if target UTC time falls into a TEMPO/BECMG/FM/PROB group."""
+def taf_target_in_group(valid_str, group_str, target_utc_h, target_utc_m, date_str, before_h=0, after_h=0):
+    """Check if target time window (target-before_h ~ target+after_h) overlaps a change group."""
     try:
         m = re.match(r'(\d{2})(\d{2})/(\d{2})(\d{2})', valid_str)
         if not m:
             return False
-        _, _, _, max_end = map(int, m.groups())
         target_day = int(date_str[-2:])
-        target_total = target_day * 100 + target_utc_h
+        t = target_day * 1440 + target_utc_h * 60 + target_utc_m
+        t_start = t - before_h * 60
+        t_end = t + after_h * 60
 
-        # Extract time range from group
         time_match = re.search(r'(\d{2})(\d{2})/(\d{2})(\d{2})', group_str)
         if time_match:
             g_day1, g_h1, g_day2, g_h2 = map(int, time_match.groups())
-            g_start = g_day1 * 100 + g_h1
-            g_end = g_day2 * 100 + g_h2
+            g_start = g_day1 * 1440 + g_h1 * 60
+            g_end = g_day2 * 1440 + g_h2 * 60
             if g_end < g_start:
-                if target_total < g_start:
-                    target_total += 3100
-                g_end += 3100
-            return g_start <= target_total <= g_end
+                g_end += 31 * 1440
+                if t_start < g_start:
+                    t_start += 31 * 1440
+                    t_end += 31 * 1440
+            return g_start <= t_end and g_end >= t_start
         return False
     except:
         return False
@@ -544,13 +545,19 @@ def get_taf(icao, date_str, target_utc_h, target_utc_m):
         result['has_fm'] = len(groups['FM']) > 0
         result['has_prob'] = len(groups['PROB']) > 0
 
-        # Find which group the target falls into
+        # 变化组：target_groups=精确覆盖目标时刻（决定风险）；impact_groups=落入前2h~后3h影响窗口（用于高亮）
         result['target_groups'] = []
+        result['impact_groups'] = []
         for g_type, g_list in [('TEMPO', groups['TEMPO']), ('BECMG', groups['BECMG']),
                                  ('FM', groups['FM']), ('PROB', groups['PROB'])]:
             for g in g_list:
-                if taf_target_in_group(valid, g, target_utc_h, target_utc_m, date_str):
+                exact = taf_target_in_group(valid, g, target_utc_h, target_utc_m, date_str)
+                near = taf_target_in_group(valid, g, target_utc_h, target_utc_m, date_str,
+                                           WX_WIN_BEFORE, WX_WIN_AFTER)
+                if exact:
                     result['target_groups'].append(g)
+                elif near:
+                    result['impact_groups'].append(g)
 
         # Risk assessment
         result['risk'] = 'LOW'
@@ -661,7 +668,7 @@ def classify_notam(notam, fw_start=None, fw_end=None):
     desc = notam['desc'].upper()
     q_code = notam.get('q_code', '').upper()
 
-    # ── 时间相关性: 通告生效窗口与该机场[操作时间-1h, +3h]无交集 → 与本次飞行无关 → LOW ──
+    # ── 时间相关性: 通告生效窗口与该机场[操作时间-2h, +3h]无交集 → 与本次飞行无关 → LOW ──
     notam['timeIrrelevant'] = False
     if (fw_start is not None and fw_end is not None
             and not notam_overlaps_flight(notam, fw_start, fw_end)):
@@ -1024,11 +1031,17 @@ def build_manual_taf(raw_text, target_utc_h, target_utc_m, date_str):
         groups = parse_taf_groups(raw)
         result['base'] = groups['BASE']
         result['target_groups'] = []
+        result['impact_groups'] = []
         for g_type, g_list in [('TEMPO', groups['TEMPO']), ('BECMG', groups['BECMG']),
                                  ('FM', groups['FM']), ('PROB', groups['PROB'])]:
             for g in g_list:
-                if taf_target_in_group(valid, g, target_utc_h, target_utc_m, date_str):
+                exact = taf_target_in_group(valid, g, target_utc_h, target_utc_m, date_str)
+                near = taf_target_in_group(valid, g, target_utc_h, target_utc_m, date_str,
+                                           WX_WIN_BEFORE, WX_WIN_AFTER)
+                if exact:
                     result['target_groups'].append(g)
+                elif near:
+                    result['impact_groups'].append(g)
         result['risk'] = 'LOW'
         for g in result['target_groups']:
             g_upper = g.upper()
@@ -1354,15 +1367,15 @@ def build_brief(params):
     else:
         arr_date = date
 
-    # 关注时段 (UTC): 该机场操作时间(起飞/落地) 前1h ~ 后3h
+    # 关注时段 (UTC): 该机场操作时间(起飞/落地) 前2h ~ 后3h
     try:
         dep_utc_dt = (dep_date + timedelta(hours=int(dep_time[:2]), minutes=int(dep_time[2:4]))
                       - timedelta(hours=8)).replace(tzinfo=timezone.utc)
         arr_utc_dt = (datetime.strptime(arr_date, '%Y-%m-%d')
                       + timedelta(hours=int(arr_time[:2]), minutes=int(arr_time[2:4]))
                       - timedelta(hours=8)).replace(tzinfo=timezone.utc)
-        dep_win = (dep_utc_dt - timedelta(hours=1), dep_utc_dt + timedelta(hours=3))
-        arr_win = (arr_utc_dt - timedelta(hours=1), arr_utc_dt + timedelta(hours=3))
+        dep_win = (dep_utc_dt - timedelta(hours=2), dep_utc_dt + timedelta(hours=3))
+        arr_win = (arr_utc_dt - timedelta(hours=2), arr_utc_dt + timedelta(hours=3))
     except Exception:
         dep_win = arr_win = (None, None)
 
@@ -1508,13 +1521,28 @@ def build_brief(params):
 # ══════════════════════════════════════════════════════════════════
 #  AI Agent · OpenAI 兼容接口（魔搭 ModelScope / 自定义）· 预取数据 + 单次判读
 # ══════════════════════════════════════════════════════════════════
+def _load_key_file():
+    """从同目录 llm_key.txt 读取 Key（每行一个，忽略空行与 # 注释）。便于本地/服务器免环境变量。"""
+    try:
+        p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'llm_key.txt')
+        with open(p, 'r', encoding='utf-8') as f:
+            for line in f:
+                s = line.strip()
+                if s and not s.startswith('#'):
+                    return s
+    except Exception:
+        pass
+    return ''
+
 LLM_ENV_BASE = os.environ.get('LLM_BASE_URL', 'https://api-inference.modelscope.cn/v1')
 LLM_ENV_MODEL = os.environ.get('LLM_MODEL', 'deepseek-ai/DeepSeek-V4.1-Flash-1017')
-LLM_ENV_KEY = os.environ.get('LLM_API_KEY', '')
+LLM_ENV_KEY = os.environ.get('LLM_API_KEY', '') or _load_key_file()
 # 魔搭 Qwen3.5 等混合推理模型默认先输出思维链，耗时且易截断输出；置 1 可关闭
 LLM_ENV_NO_THINK = os.environ.get('LLM_NO_THINK', '').lower() in ('1', 'true', 'yes', 'on')
 AGENT_NOTAM_LIMIT = 70        # 每机场送入模型的最大通告条数
 AGENT_NOTAM_DESC = 240        # 每条 E) 原文截断长度
+WX_WIN_BEFORE = 2             # 天气影响窗口：目标时刻前 N 小时
+WX_WIN_AFTER = 3              # 天气影响窗口：目标时刻后 N 小时
 
 AGENT_SYSTEM_PROMPT = """你是航空运行方向的 WX / TAF / NOTAM 判读智能体，服务对象是专业航空人员。默认机型按 C 类（B737/A320/C919/C909，翼展 27–36m）。
 
@@ -1550,8 +1578,12 @@ AGENT_SYSTEM_PROMPT = """你是航空运行方向的 WX / TAF / NOTAM 判读智�
 - 不得直接输出英文原文充当摘要，也不得只写「VOR/DME 不工作」这类丢失设施信息的表述。
 
 【TAF / WX】
-- TAF：只有目标时刻落在 TEMPO / BECMG / FM / PROB 变化组才算重点（界面会加粗）；仅落在 BASE 不加粗、不额外提示；ISSUE 取最新。
+- 天气影响窗口：目标时刻前 2 小时 ~ 后 3 小时（起飞对照 DEP、落地对照 ARR）；变化组落入该窗口即视为有影响（界面自动加粗），无需在文字里说明「前2h/后3h」或「是否在时段」。
+- taf_note 格式：逐机场写成「ICAO 起飞/落地 + 实际风、能见度、云（取自 TAF 原文，不要写 BASE 字样）」；有变化组则直接附原文，不加括号说明，例：
+  「WMKK 落地 VRB03KT 9999 FEW018，PROB40 TEMPO 3107/3111 雷雨；ZGGG 起飞 14003MPS 8000 SCT040。」
+- 若某机场 TAF 不覆盖目标时刻，直接写「不覆盖起飞/落地时刻」，不要编造天气。
 - WX：VIS <800m、TS/雷暴、强降水 → HIGH；中等降水或低能见度 → MED；其余 LOW。
+- WX 数据块已给出时，禁止在 notes 里说「WX 数据缺失 / 未获取」；只有对应机场的 WX 块为空才允许提示缺失。
 
 【结论】
 - risk 取 HIGH / MED / LOW（这是风险等级，不是放行结论）；不要输出 GO / NO-GO / MONITOR，也不要给出推迟、备降、取消等运行决策，放行与否由机组判断。
@@ -1700,13 +1732,24 @@ def _agent_taf_block(icao, t, target):
         return f'【TAF {icao}（目标 {target}）】无数据'
     if t.get('error'):
         return f'【TAF {icao}（目标 {target}）】{t.get("message") or t.get("error")}'
-    lines = [f'【TAF {icao}（目标 {target}）】来源 {t.get("source", "")} '
+    win = ''
+    try:
+        dt = datetime.strptime(target, '%Y-%m-%d %H:%M UTC')
+        s = dt - timedelta(hours=WX_WIN_BEFORE)
+        e = dt + timedelta(hours=WX_WIN_AFTER)
+        win = f'；影响窗口 {s:%m-%d %H:%M}~{e:%m-%d %H:%M} UTC'
+    except Exception:
+        pass
+    lines = [f'【TAF {icao}（目标 {target}{win}）】来源 {t.get("source", "")} '
              f'ISSUE {t.get("issue", "")} VALID {t.get("valid", "")} 覆盖目标 {t.get("covers")}']
     tg = t.get('target_groups') or []
     if tg:
-        lines.append('目标时刻所属变化组：' + ' | '.join(str(g)[:300] for g in tg))
-    elif t.get('base'):
-        lines.append('目标时刻仅落 BASE：' + str(t['base'])[:300])
+        lines.append('覆盖目标时刻的变化组：' + ' | '.join(str(g)[:300] for g in tg))
+    ig = t.get('impact_groups') or []
+    if ig:
+        lines.append('影响窗口内的变化组：' + ' | '.join(str(g)[:300] for g in ig))
+    if t.get('base'):
+        lines.append('基础天气（TAF 原文）：' + str(t['base'])[:300])
     lines.append('原始报文：' + (t.get('raw') or '')[:600])
     return '\n'.join(lines)
 
@@ -1932,7 +1975,7 @@ def agent_brief(params):
         return {'error': '缺少参数'}, 400
     cfg = _llm_cfg(params)
     if not cfg['api_key']:
-        return {'error': 'AI 未配置：请在设置中填写 API Key，或启动服务器时设置环境变量 LLM_API_KEY',
+        return {'error': 'AI 未配置：请在网页设置里填 API Key，或把 Key 写入 llm_key.txt，或设置环境变量 LLM_API_KEY',
                 'code': 'AI_NOT_CONFIGURED'}, 400
     t0 = time.time()
     try:
@@ -1969,6 +2012,14 @@ def agent_brief(params):
             fs = fs[:5]
         fs += low_lines
         concl['factors'] = fs[:7]
+    # WX 实际已获取时，剔除模型误报的「WX 数据缺失」提示
+    if brief.get('dep_wx') and brief.get('arr_wx'):
+        ns = ai.get('notes')
+        if isinstance(ns, list):
+            ai['notes'] = [
+                n for n in ns
+                if not ((('WX' in n) or ('天气' in n)) and any(w in n for w in ('缺失', '未获取', '无法获取', '获取失败')))
+            ]
     brief['ai'] = {
         'model': cfg['model'],
         'elapsed_ms': int((time.time() - t0) * 1000),
@@ -2089,7 +2140,7 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 cfg = _llm_cfg(params)
                 if not cfg['api_key']:
-                    self._json({'ok': False, 'error': '未填写 API Key（或服务器未设置 LLM_API_KEY）'}, 400)
+                    self._json({'ok': False, 'error': '未填写 API Key（网页设置、llm_key.txt 或 LLM_API_KEY 均可）'}, 400)
                     return
                 try:
                     r = llm_chat([{'role': 'user', 'content': '只回复两个字母：OK'}], None, cfg, timeout=45)
