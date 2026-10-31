@@ -2,7 +2,7 @@
  * 仅缓存"应用外壳"(HTML/manifest/图标)，接口请求一律走网络。
  * 注意: iOS 通过 http://内网IP 访问时 SW 无法注册(需 https/localhost)，
  * 此时离线缓存不可用，但"添加到主屏幕"仍可正常安装。 */
-const CACHE = 'avbrief-v1';
+const CACHE = 'avbrief-v14';
 const SHELL = ['/', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png'];
 
 self.addEventListener('install', function (e) {

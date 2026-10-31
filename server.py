@@ -8,7 +8,9 @@ import html
 import os
 import io
 import ssl
+import time
 import urllib.request
+import urllib.error
 import urllib.parse
 import zipfile
 import threading
@@ -20,6 +22,9 @@ from urllib.parse import urlparse, parse_qs
 # ── Simple cache ──────────────────────────────────────────────────
 _notam_cache = {}  # {icao: (timestamp, data)}
 _coord_cache = {}  # {icao: (lat, lon, name) | None}  机场坐标解析缓存
+_wx_cache = {}    # {(icao, date, hour): (timestamp, data)}
+_taf_cache = {}   # {(icao, date, h, m): (timestamp, data)}
+_cache_lock = threading.Lock()
 
 # ── Airport database ──────────────────────────────────────────────
 AIRPORTS = {
@@ -558,6 +563,33 @@ def get_taf(icao, date_str, target_utc_h, target_utc_m):
                     result['risk'] = 'MED'
 
     return result
+
+# ── Cached wrappers (avoid double-fetch when AI agent + brief both run) ──
+def get_wx_cached(icao, date_str, target_hour_bjt):
+    key = (icao, date_str, target_hour_bjt)
+    now = datetime.now(timezone.utc)
+    with _cache_lock:
+        hit = _wx_cache.get(key)
+        if hit and (now - hit[0]).total_seconds() < 600:
+            return hit[1]
+    val = get_wx(icao, date_str, target_hour_bjt)
+    if val:
+        with _cache_lock:
+            _wx_cache[key] = (now, val)
+    return val
+
+def get_taf_cached(icao, date_str, target_utc_h, target_utc_m):
+    key = (icao, date_str, target_utc_h, target_utc_m)
+    now = datetime.now(timezone.utc)
+    with _cache_lock:
+        hit = _taf_cache.get(key)
+        if hit and (now - hit[0]).total_seconds() < 600:
+            return hit[1]
+    val = get_taf(icao, date_str, target_utc_h, target_utc_m)
+    if val and not val.get('error'):
+        with _cache_lock:
+            _taf_cache[key] = (now, val)
+    return val
 
 # ── NOTAM ─────────────────────────────────────────────────────────
 def notam_series_offset(notam_id):
@@ -1128,6 +1160,7 @@ def load_notam_fallback(icao):
         # Use the same expiry check as main code
         active = []
         for n in notams:
+            n['effective'] = n.get('effective') or n.get('eff_from', '')  # 兼容旧缓存键名
             n['expired'] = check_notam_expired(n.get('expires', ''), n.get('id'))
             if not n['expired']:
                 active.append(n)
@@ -1179,6 +1212,7 @@ def _embedded_notam_cache_js():
             rows.append({
                 'id': n.get('id', ''),
                 'q_code': n.get('q_code', ''),
+                'effective': n.get('effective') or n.get('eff_from', ''),
                 'expires': n.get('expires', ''),
                 'desc': n.get('desc', ''),
             })
@@ -1294,6 +1328,7 @@ def build_brief(params):
     date = params.get('date', '')
     dep_time = params.get('dep_time', '')
     arr_time = params.get('arr_time', '')
+    arr_date_in = (params.get('arr_date', '') or '').strip()
     manual_notam_text = params.get('manual_notam', '') or ''
     manual_taf_text = params.get('manual_taf', '') or ''
     notam_mode = params.get('notam_mode', 'merge')   # auto | merge | manual
@@ -1309,10 +1344,12 @@ def build_brief(params):
     if dep_h is None or arr_h is None:
         return {'error': '时间格式错误'}, 400
 
-    # Calculate arrival date (handle overnight flights: arr_time < dep_time)
+    # Calculate arrival date: 优先用户填写的 ARR DATE; 否则跨夜(arr_time<dep_time)记次日
     is_overnight = int(arr_time) < int(dep_time)
     dep_date = datetime.strptime(date, '%Y-%m-%d')
-    if is_overnight:
+    if arr_date_in:
+        arr_date = arr_date_in
+    elif is_overnight:
         arr_date = (dep_date + timedelta(days=1)).strftime('%Y-%m-%d')
     else:
         arr_date = date
@@ -1357,12 +1394,12 @@ def build_brief(params):
         futures = {}
 
         # WX tasks
-        futures['dep_wx'] = executor.submit(get_wx, dep, date, int(dep_time[:2]))
-        futures['arr_wx_1'] = executor.submit(get_wx, arr, arr_date, arr_hour_1)
-        futures['arr_wx_2'] = executor.submit(get_wx, arr, arr_date_2, arr_hour_2)
+        futures['dep_wx'] = executor.submit(get_wx_cached, dep, date, int(dep_time[:2]))
+        futures['arr_wx_1'] = executor.submit(get_wx_cached, arr, arr_date, arr_hour_1)
+        futures['arr_wx_2'] = executor.submit(get_wx_cached, arr, arr_date_2, arr_hour_2)
         # TAF — use precise UTC date
-        futures['taf'] = executor.submit(get_taf, arr, taf_utc_date, taf_utc_h, taf_utc_m)
-        futures['dep_taf'] = executor.submit(get_taf, dep, dep_taf_utc_date, dep_taf_utc_h, dep_taf_utc_m)
+        futures['taf'] = executor.submit(get_taf_cached, arr, taf_utc_date, taf_utc_h, taf_utc_m)
+        futures['dep_taf'] = executor.submit(get_taf_cached, dep, dep_taf_utc_date, dep_taf_utc_h, dep_taf_utc_m)
         # NOTAM
         futures['dep_notam'] = executor.submit(get_notams, dep)
         futures['arr_notam'] = executor.submit(get_notams, arr)
@@ -1468,6 +1505,486 @@ def build_brief(params):
 
     return result, 200
 
+# ══════════════════════════════════════════════════════════════════
+#  AI Agent · OpenAI 兼容接口（魔搭 ModelScope / 自定义）· 预取数据 + 单次判读
+# ══════════════════════════════════════════════════════════════════
+LLM_ENV_BASE = os.environ.get('LLM_BASE_URL', 'https://api-inference.modelscope.cn/v1')
+LLM_ENV_MODEL = os.environ.get('LLM_MODEL', 'deepseek-ai/DeepSeek-V4.1-Flash-1017')
+LLM_ENV_KEY = os.environ.get('LLM_API_KEY', '')
+# 魔搭 Qwen3.5 等混合推理模型默认先输出思维链，耗时且易截断输出；置 1 可关闭
+LLM_ENV_NO_THINK = os.environ.get('LLM_NO_THINK', '').lower() in ('1', 'true', 'yes', 'on')
+AGENT_NOTAM_LIMIT = 70        # 每机场送入模型的最大通告条数
+AGENT_NOTAM_DESC = 240        # 每条 E) 原文截断长度
+
+AGENT_SYSTEM_PROMPT = """你是航空运行方向的 WX / TAF / NOTAM 判读智能体，服务对象是专业航空人员。默认机型按 C 类（B737/A320/C919/C909，翼展 27–36m）。
+
+【工作方式】
+1. 起降机场的 WX、TAF、NOTAM 已由系统预取并放在 <DATA> 中，附带规则引擎参考等级、有效期与来源，直接判读，不调用任何工具。
+2. 数据缺失、源异常或带 source_warning 时，在 notes 说明，不得编造。
+3. 只输出一个 JSON 对象，不要多余文字，不要代码块围栏。
+
+【NOTAM 分级规则】
+- HIGH：跑道关闭/缩短、影响落地时段的关键导航设施失效（ILS/VOR/DME）、明确写明影响 RWY 的起飞性能或程序受限。
+- MED：跑道相关限制、滑行道/联络道整段关闭、导航设备不可用、鸟类活动、明确写明影响性能的障碍物。
+- GND CHECK：仅部分滑行道/联络道关闭或转弯方向受限（BTN/FM/TIL、部分关闭、INT 关闭）。表述要精炼且说明问题，例如「E↔J1 部分转弯方向受限」；你不知道实际滑行路线，不要臆断具体路线。
+- CHECK TIME：仅在特定时间窗口生效、且与本次航班时段相关的限制（如夜间关闭、按时段限用），提示机组核对时间。
+- LOW：机位/登机口关闭、翼展限制 ≤36m 或 ≤65m、未明写性能影响的障碍物/塔吊/施工/鸟情通报/设备测试等。
+
+【必须遵守】
+- 凡对 C 类机型不构成运行影响的（机位关闭、翼展 ≤36m/≤65m、未明写性能影响的障碍物）一律判 LOW，且不要解释「C 类不受影响」这类原因。
+- LOW 也必须逐条给中文摘要（≤25 字），不得省略；内容再小也要把要点翻成中文。
+- 通告列表每行格式：编号|规则引擎参考等级|生效~失效|E)原文。参考等级仅供对照，与航班时段无关或明显判错时可改判。
+- HIGH / MED / GND CHECK / CHECK TIME / LOW 必须逐条输出判读，一条不漏；LOW 也要给中文摘要（≤20 字）。
+- summary 必须是中文；禁止复制/截断英文原文充当摘要。确实无法归类的写「xx类通告，详见原文」。
+- 通告生效时间与航班时段（起飞前 1h ~ 落地后 3h）无交集、或尚未生效的，不参与风险；必要时在 notes 提一句。
+- 中文精简，每条 summary ≤40 字；能删的字都删掉，只保留定位所需信息。
+- 摘要规范（必须遵守）：
+  · 滑行道区段关闭：写「编号 (端点-端点) 关闭」，只写一次「关闭」，不写「部分关闭 / 段」。例：TWY L CLSD BTN ACFT STAND F32 AND ACFT STAND F34 →「L (F32-F34) 关闭」；TWY E BTN INT TWY K AND INT E2 CLSD →「E (K-E2) 关闭」；TWY N BTN T12 AND T13 →「N (T12-T13) 关闭」。
+  · 按方位关闭：写「编号 (参照物 方位) 关闭」。例：TWY V1 CLSD NORTH OF TWY T13 →「V1 (T13 以北) 关闭」；原因原文写明时在末尾加「（运行需要）」或「（施工）」「（维护）」。
+  · 整条滑行道/联络道关闭：「S1 关闭」「K 关闭」。
+  · 交叉口关闭：INT A1 CLSD →「A1 交叉口关闭」；多个写「A1/A2 交叉口关闭」。
+  · 机位（PARKING STAND / PRKG STAND / ACFT STAND / AIRCRAFT STAND）统一写成「停机位」：停机位 GT1/GT2 关闭；区间写「停机位 F32-F34」。
+  · 导航设施必须写识别码（VKL、LMN、POU、CEN 等），ILS/LOC 写跑道号，例：「LMN VOR/DME 不工作」「32L ILS 下滑台不工作」。
+  · TRIGGER NOTAM / AIP 修订：必须译出「改了什么」，不得只写「触发通告」。例：CHANGES TO WMKP AD 2.10, AD 2.12, AD 2.15 AND ADC/APDC/GMC →「AIP 修订 04/26 生效：WMKP 机场资料 2.10/2.12/2.15、机场图/停机位图/地面活动图更新」。
+- 摘要中不得出现 TWY / RWY / INT / CLSD / U/S / BTN / ACFT STAND 等英文词，一律写成中文；机位写「停机位」。
+- 不得直接输出英文原文充当摘要，也不得只写「VOR/DME 不工作」这类丢失设施信息的表述。
+
+【TAF / WX】
+- TAF：只有目标时刻落在 TEMPO / BECMG / FM / PROB 变化组才算重点（界面会加粗）；仅落在 BASE 不加粗、不额外提示；ISSUE 取最新。
+- WX：VIS <800m、TS/雷暴、强降水 → HIGH；中等降水或低能见度 → MED；其余 LOW。
+
+【结论】
+- risk 取 HIGH / MED / LOW（这是风险等级，不是放行结论）；不要输出 GO / NO-GO / MONITOR，也不要给出推迟、备降、取消等运行决策，放行与否由机组判断。
+- HIGH：存在影响起飞或落地的高风险项（如 WX 低于标准、关键导航失效、跑道关闭）；MED：有需关注项；LOW：无显著风险。
+- headline 一句话说明主要风险来源，例如「WMKK 落地时段有 TEMPO 雷雨、能见度 5000m，落地风险高」；不要出现「建议推迟/备降/可正常执行」。
+- factors 列关键依据（≤7 条）；同类必须合并，不要一条通告一行：
+  · 滑行道关闭合并为一行：「滑行道关闭（S1、N (T12-T13)、Q11 (Q-Q15)、V1 (T13 以北)、J43 (Q 以东)）」
+  · 按机场分段：「WMKK：ILS 32L GP 不工作；地面：滑行道关闭（L (STAND F32-F34)、E (K-E1)）」
+  · 导航设施合并：「LMN/POU/CEN VOR 失效，多条 SID/STAR 不可用」
+  · LOW 项一律不要写进 factors（界面会按机场自动合并），只写 HIGH / MED / GND CHECK / CHECK TIME 的依据。
+- actions 只写机组需要核对/确认的动作（≤3 条），不写放行决定。
+- factors / actions 必须写成中文结论（如「POU/CEN VOR 失效，多条 SID/STAR 不可用」），禁止只列通告编号。可带 1–2 个关键编号辅助定位。
+
+【输出 JSON 结构】
+{
+  "conclusion": {"risk": "HIGH|MED|LOW", "headline": "一句话", "factors": ["..."], "actions": ["..."]},
+  "notam_judgments": [
+    {"id": "A2923/26", "level": "HIGH|MED|GND CHECK|CHECK TIME|LOW", "summary": "中文精简判读"}
+  ],
+  "taf_note": "TAF 要点（可为空字符串）",
+  "wx_note": "WX 要点（可为空字符串）",
+  "notes": ["数据缺失/需人工核对等提示"]
+}
+notam_judgments 必须覆盖输入中的每一条通告（含 LOW），一条不漏；summary 全部用中文。"""
+
+def _llm_cfg(payload):
+    llm = payload.get('llm') if isinstance(payload, dict) else None
+    llm = llm if isinstance(llm, dict) else {}
+    base_url = (llm.get('base_url') or LLM_ENV_BASE).rstrip('/')
+    no_think = llm.get('no_think')
+    if no_think is None:
+        # 魔搭渠道默认关闭思维链，避免混合推理模型 40s+ 延迟与输出截断
+        no_think = LLM_ENV_NO_THINK or ('modelscope' in base_url)
+    return {
+        'base_url': base_url,
+        'model': llm.get('model') or LLM_ENV_MODEL,
+        'api_key': llm.get('api_key') or LLM_ENV_KEY,
+        'no_think': bool(no_think),
+    }
+
+def llm_chat(messages, tools, cfg, timeout=120, temperature=0.1, response_format=None, max_tokens=None):
+    body = {'model': cfg['model'], 'messages': messages, 'temperature': temperature}
+    if max_tokens:
+        body['max_tokens'] = max_tokens
+    if response_format:
+        body['response_format'] = response_format
+    if cfg.get('no_think'):
+        body['chat_template_kwargs'] = {'enable_thinking': False}
+    if tools:
+        body['tools'] = tools
+        body['tool_choice'] = 'auto'
+    req = urllib.request.Request(
+        cfg['base_url'] + '/chat/completions',
+        data=json.dumps(body, ensure_ascii=False).encode('utf-8'),
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + cfg['api_key'],
+            'Accept': 'application/json',
+        })
+    try:
+        with _build_opener().open(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode('utf-8', errors='replace'))
+    except urllib.error.HTTPError as e:
+        detail = ''
+        try:
+            detail = e.read().decode('utf-8', errors='replace')[:300]
+        except Exception:
+            pass
+        raise RuntimeError(f'HTTP {e.code} {detail}')
+    except Exception as e:
+        raise RuntimeError(str(e)[:200])
+
+def _agent_ctx(params):
+    """计算航班信息与目标 UTC 时刻（与 build_brief 一致）。"""
+    dep = (params.get('dep') or '').upper()
+    arr = (params.get('arr') or '').upper()
+    date = params.get('date', '')
+    dep_time = params.get('dep_time', '')
+    arr_time = params.get('arr_time', '')
+    arr_date_in = (params.get('arr_date') or '').strip()
+    is_overnight = int(arr_time) < int(dep_time)
+    dep_dt = datetime.strptime(date, '%Y-%m-%d')
+    if arr_date_in:
+        arr_date = arr_date_in
+    elif is_overnight:
+        arr_date = (dep_dt + timedelta(days=1)).strftime('%Y-%m-%d')
+    else:
+        arr_date = date
+    taf_utc_date, taf_h, taf_m = bjt_datetime_to_utc_date(date, arr_time, is_overnight)
+    dep_taf_utc_date, dep_taf_h, dep_taf_m = bjt_datetime_to_utc_date(date, dep_time, False)
+    return {
+        'dep': dep, 'arr': arr, 'date': date, 'arr_date': arr_date,
+        'dep_time': dep_time, 'arr_time': arr_time,
+        'is_overnight': is_overnight,
+        'dep_utc': (datetime.strptime(date, '%Y-%m-%d')
+                    + timedelta(hours=int(dep_time[:2]), minutes=int(dep_time[2:4]))
+                    - timedelta(hours=8)).strftime('%Y-%m-%d %H:%M UTC'),
+        'arr_utc': (datetime.strptime(arr_date, '%Y-%m-%d')
+                    + timedelta(hours=int(arr_time[:2]), minutes=int(arr_time[2:4]))
+                    - timedelta(hours=8)).strftime('%Y-%m-%d %H:%M UTC'),
+        'arr_taf_target': f'{taf_utc_date} {taf_h:02d}:{taf_m:02d} UTC',
+        'dep_taf_target': f'{dep_taf_utc_date} {dep_taf_h:02d}:{dep_taf_m:02d} UTC',
+        'arr_taf_args': (taf_utc_date, taf_h, taf_m),
+        'dep_taf_args': (dep_taf_utc_date, dep_taf_h, dep_taf_m),
+    }
+
+def _agent_prefetch(ctx):
+    """并行预取起降机场 WX / TAF / NOTAM（与 build_brief 同源、共用缓存）。"""
+    dep, arr = ctx['dep'], ctx['arr']
+    dep_h = int(ctx['dep_time'][:2])
+    arr_h = int(ctx['arr_time'][:2])
+    arr_h2 = arr_h + 1
+    arr_date2 = ctx['arr_date']
+    if arr_h2 >= 24:
+        arr_h2 = 0
+        arr_date2 = (datetime.strptime(ctx['arr_date'], '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
+    jobs = {
+        'dep_notam': (get_notams, (dep,)),
+        'arr_notam': (get_notams, (arr,)),
+        'dep_wx': (get_wx_cached, (dep, ctx['date'], dep_h)),
+        'arr_wx': (get_wx_cached, (arr, ctx['arr_date'], arr_h)),
+        'arr_wx2': (get_wx_cached, (arr, arr_date2, arr_h2)),
+        'arr_taf': (get_taf_cached, (arr,) + tuple(ctx['arr_taf_args'])),
+        'dep_taf': (get_taf_cached, (dep,) + tuple(ctx['dep_taf_args'])),
+    }
+    out = {}
+    with ThreadPoolExecutor(max_workers=7) as ex:
+        futs = {k: ex.submit(fn, *args) for k, (fn, args) in jobs.items()}
+        for k, f in futs.items():
+            try:
+                out[k] = f.result(timeout=40)
+            except Exception:
+                out[k] = None
+    return out
+
+def _agent_wx_line(label, w):
+    if not w:
+        return f'{label} 无数据'
+    gust = f" 阵风{w.get('wind_gst')}kt" if w.get('wind_gst') else ''
+    return (f"{label} {w.get('time', '')} 风{w.get('wind_dir')}°/{w.get('wind_spd')}kt{gust} "
+            f"能见度{w.get('vis')}m {w.get('wx_name') or ''} "
+            f"降水概率{w.get('pop')}% 降水{w.get('precip')}mm")
+
+def _agent_taf_block(icao, t, target):
+    if not t:
+        return f'【TAF {icao}（目标 {target}）】无数据'
+    if t.get('error'):
+        return f'【TAF {icao}（目标 {target}）】{t.get("message") or t.get("error")}'
+    lines = [f'【TAF {icao}（目标 {target}）】来源 {t.get("source", "")} '
+             f'ISSUE {t.get("issue", "")} VALID {t.get("valid", "")} 覆盖目标 {t.get("covers")}']
+    tg = t.get('target_groups') or []
+    if tg:
+        lines.append('目标时刻所属变化组：' + ' | '.join(str(g)[:300] for g in tg))
+    elif t.get('base'):
+        lines.append('目标时刻仅落 BASE：' + str(t['base'])[:300])
+    lines.append('原始报文：' + (t.get('raw') or '')[:600])
+    return '\n'.join(lines)
+
+def _agent_notam_block(label, icao, nd):
+    if not isinstance(nd, dict):
+        return f'【NOTAM {label} {icao}】无数据'
+    active = nd.get('active') or []
+    warn = nd.get('source_warning') or ''
+    head = f'【NOTAM {label} {icao}，{len(active)} 条' + (f'；{warn}' if warn else '') + '】'
+    rows = []
+    ordered = sorted(active, key=lambda n: classify_notam(dict(n)) == 'LOW')
+    for n in ordered[:AGENT_NOTAM_LIMIT]:
+        desc = re.sub(r'\s+', ' ', n.get('desc') or '')[:AGENT_NOTAM_DESC]
+        rows.append(f"{n.get('id', '')}|{classify_notam(dict(n))}|"
+                    f"{(n.get('effective') or n.get('eff_from') or '')[:20]}"
+                    f"~{(n.get('expires') or '')[:20]}|{desc}")
+    if len(active) > AGENT_NOTAM_LIMIT:
+        rows.append(f'（另有 {len(active) - AGENT_NOTAM_LIMIT} 条通告未列出，沿用规则引擎结果）')
+    return head + '\n' + '\n'.join(rows)
+
+def _extract_json(text):
+    if not text:
+        return None
+    t = text.strip()
+    t = re.sub(r'^```(?:json)?\s*', '', t)
+    t = re.sub(r'\s*```$', '', t)
+    try:
+        return json.loads(t)
+    except Exception:
+        pass
+    i, j = t.find('{'), t.rfind('}')
+    if i >= 0 and j > i:
+        try:
+            return json.loads(t[i:j + 1])
+        except Exception:
+            return None
+    return None
+
+def run_agent(params, cfg):
+    """单次往返：服务器并行预取数据 → 一次 LLM 调用输出结构化判读。"""
+    ctx = _agent_ctx(params)
+    t0 = time.time()
+    data = _agent_prefetch(ctx)
+    prefetch_ms = int((time.time() - t0) * 1000)
+
+    dep, arr = ctx['dep'], ctx['arr']
+    parts = [
+        '<DATA>',
+        f"【航班】{dep} {ctx['date']} {ctx['dep_time']} BJT → "
+        f"{arr} {ctx['arr_date']} {ctx['arr_time']} BJT；机型 C 类（翼展 <36m）",
+        f"起飞 {ctx['dep_utc']}；落地 {ctx['arr_utc']}",
+        _agent_wx_line(f'【WX {dep} 起飞时段】', data.get('dep_wx')),
+        _agent_wx_line(f'【WX {arr} 落地时段】', data.get('arr_wx')),
+    ]
+    if data.get('arr_wx2'):
+        parts.append(_agent_wx_line(f'【WX {arr} 落地后1H】', data.get('arr_wx2')))
+    parts.append(_agent_taf_block(arr, data.get('arr_taf'), ctx['arr_taf_target']))
+    if dep != arr:
+        parts.append(_agent_taf_block(dep, data.get('dep_taf'), ctx['dep_taf_target']))
+    parts.append(_agent_notam_block('起飞机场', dep, data.get('dep_notam')))
+    parts.append(_agent_notam_block('落地机场', arr, data.get('arr_notam')))
+    parts.append('</DATA>')
+    user = '\n'.join(parts)
+
+    manual_taf = (params.get('manual_taf') or '').strip()
+    manual_notam = (params.get('manual_notam') or '').strip()
+    if manual_taf:
+        user += f'\n\n【用户粘贴的 TAF 报文（以此为准）】\n{manual_taf[:6000]}'
+    if manual_notam:
+        user += f'\n\n【用户粘贴的 NOTAM（JEP Pro/官方，优先采用，同号覆盖）】\n{manual_notam[:20000]}'
+    user += '\n\n请按规则判读，只输出 JSON。'
+
+    messages = [
+        {'role': 'system', 'content': AGENT_SYSTEM_PROMPT},
+        {'role': 'user', 'content': user},
+    ]
+    t1 = time.time()
+    try:
+        resp = llm_chat(messages, None, cfg, timeout=180, temperature=0,
+                        response_format={'type': 'json_object'}, max_tokens=2400)
+    except RuntimeError as e:
+        # 兼容端点可能不支持 response_format → 去掉后重试一次
+        if 'HTTP 400' in str(e) or 'HTTP 422' in str(e):
+            resp = llm_chat(messages, None, cfg, timeout=180, temperature=0, max_tokens=2400)
+        else:
+            raise
+    llm_ms = int((time.time() - t1) * 1000)
+
+    u = resp.get('usage') or {}
+    usage = {'prompt_tokens': int(u.get('prompt_tokens') or 0),
+             'completion_tokens': int(u.get('completion_tokens') or 0)}
+    choices = resp.get('choices') or []
+    if not choices:
+        raise RuntimeError('模型无返回')
+    msg = choices[0].get('message') or {}
+    ai = _extract_json(msg.get('content') or '')
+    if not isinstance(ai, dict):
+        raise RuntimeError('AI 输出不是有效 JSON：' + (msg.get('content') or '')[:120])
+
+    def _count(key):
+        nd = data.get(key)
+        return len(nd.get('active') or []) if isinstance(nd, dict) else 0
+
+    meta = {'prefetch_ms': prefetch_ms, 'llm_ms': llm_ms,
+            'notam_count': _count('dep_notam') + _count('arr_notam'),
+            'prompt_chars': len(user)}
+    return ai, meta, usage
+
+_LEVEL_ALIASES = {
+    'HIGH': 'HIGH', 'MED': 'MED', 'MEDIUM': 'MED',
+    'GND CHECK': 'GND CHECK', 'GNDCHECK': 'GND CHECK',
+    'CHECK TIME': 'CHECK TIME', 'CHECKTIME': 'CHECK TIME',
+    'LOW': 'LOW',
+}
+
+def _norm_level(v):
+    if not v:
+        return None
+    s = re.sub(r'[\s_]+', ' ', str(v).strip().upper())
+    return _LEVEL_ALIASES.get(s) or _LEVEL_ALIASES.get(s.replace(' ', '')) or None
+
+def _cn_summary(s):
+    """把模型摘要里残留的英文缩写统一成中文，保证界面只出现中文表述。"""
+    s = str(s).strip()
+    s = re.sub(r'\bTWY\s+', '滑行道', s)
+    s = re.sub(r'\bRWY\s*', '跑道', s)
+    s = re.sub(r'\bINT\s+', '交叉口', s)
+    s = re.sub(r'\bBTN\s+', '之间', s)
+    s = re.sub(r'\bCLSD\b', '关闭', s)
+    return s
+
+def apply_ai_judgments(brief, judgments):
+    """把 AI 判读结果写回通告并重新分桶。未列出的通告保持规则引擎结果。"""
+    jmap = {}
+    for j in judgments or []:
+        if isinstance(j, dict) and j.get('id'):
+            jmap[str(j['id']).strip().upper()] = j
+    for key in ('dep_notam', 'arr_notam'):
+        nd = brief.get(key)
+        if not isinstance(nd, dict):
+            continue
+        for n in nd.get('active', []):
+            j = jmap.get(str(n.get('id') or '').strip().upper())
+            if not j:
+                continue
+            lvl = _norm_level(j.get('level'))
+            if lvl:
+                n['ai_level'] = lvl
+            if j.get('summary'):
+                s = _cn_summary(j['summary'])
+                # 只接受中文摘要；纯英文（模型照抄原文）直接丢弃，前端回退规则中文摘要
+                if re.search(r'[\u4e00-\u9fff]', s):
+                    n['ai_summary'] = s
+        buckets = {'HIGH': [], 'MED': [], 'GND CHECK': [], 'CHECK TIME': [], 'LOW': []}
+        folded = []
+        for n in nd.get('active', []):
+            lvl = n.get('ai_level') or n.get('cat') or 'LOW'
+            if n.get('timeIrrelevant'):
+                folded.append(n)   # 不在本次航班时段 → 一律折叠，与 AI 给的等级无关
+                continue
+            buckets.get(lvl, buckets['LOW']).append(n)
+        rebuilt = dict(nd)
+        rebuilt['high'] = buckets['HIGH']
+        rebuilt['med'] = buckets['MED']
+        rebuilt['gnd_check'] = buckets['GND CHECK']
+        rebuilt['check_time'] = buckets['CHECK TIME']
+        rebuilt['low'] = buckets['LOW']
+        rebuilt['folded'] = folded
+        brief[key] = rebuilt
+
+def _low_lines(brief):
+    """把 LOW 项按机场合并成结论依据（塔吊写处数与高度，机位写处数）。"""
+    out = []
+    for key, icao in (('dep_notam', brief.get('dep')), ('arr_notam', brief.get('arr'))):
+        if not icao:
+            continue
+        items = (brief.get(key) or {}).get('low') or []
+        crane = stands = 0
+        heights, others = [], []
+        for n in items:
+            s = (n.get('ai_summary') or '').strip()
+            d = n.get('desc') or ''
+            if re.search(r'(塔吊|吊车|起重机|障碍物)', s):
+                crane += 1
+                h = re.findall(r'(\d{2,3})\s*m', s) or re.findall(r'MAX HGT[^0-9]*(\d{2,3})\s*M', d, re.I)
+                heights += h
+            elif '停机位' in s:
+                stands += 1
+            elif s and s not in others:
+                others.append(s)
+        parts = []
+        if crane:
+            hh = ''
+            if heights:
+                nums = sorted(set(int(x) for x in heights))
+                hh = f'（{nums[0]}' + (f'–{nums[-1]}' if len(nums) > 1 else '') + 'm）'
+            parts.append(f'{crane} 处塔吊障碍物{hh}')
+        if stands:
+            parts.append(f'{stands} 处停机位关闭')
+        merged, aip = [], {}
+        for s in others:
+            m = re.match(r'(AIP[^：]*[：:])', s)
+            if m:
+                k, tail = m.group(1), s[len(m.group(1)):].strip()
+                if k in aip:
+                    if tail not in aip[k]:
+                        aip[k].append(tail)
+                else:
+                    aip[k] = [tail]
+                    merged.append(k)
+            elif s not in merged:
+                merged.append(s)
+        for it in merged:
+            parts.append(it + '、'.join(aip[it]) if it in aip else it)
+        parts = parts[:5]
+        if parts:
+            out.append(f'{icao}：' + '；'.join(parts))
+    return out
+
+def agent_brief(params):
+    """AI 智能体模式：先由模型取数判读，再用同一份数据构建展示结构。"""
+    if not (params.get('dep') and params.get('arr') and params.get('date')):
+        return {'error': '缺少参数'}, 400
+    cfg = _llm_cfg(params)
+    if not cfg['api_key']:
+        return {'error': 'AI 未配置：请在设置中填写 API Key，或启动服务器时设置环境变量 LLM_API_KEY',
+                'code': 'AI_NOT_CONFIGURED'}, 400
+    t0 = time.time()
+    try:
+        ai, meta, usage = run_agent(params, cfg)
+    except Exception as e:
+        return {'error': f'AI 判读失败: {str(e)[:200]}', 'code': 'AI_FAILED'}, 502
+
+    brief, code = build_brief(params)
+    if code != 200:
+        return brief, code
+    apply_ai_judgments(brief, ai.get('notam_judgments') or [])
+    # 结论只输出风险等级 HIGH/MED/LOW；兼容模型回退到 GO/NOGO/MONITOR 的旧写法
+    concl = ai.get('conclusion') if isinstance(ai.get('conclusion'), dict) else {}
+    ai['conclusion'] = concl
+    raw_risk = str(concl.get('risk') or '').upper().replace('-', '').replace(' ', '')
+    risk_map = {'HIGH': 'HIGH', 'NOGO': 'HIGH', 'MED': 'MED', 'MEDIUM': 'MED',
+                'MONITOR': 'MED', 'LOW': 'LOW', 'GO': 'LOW'}
+    risk = risk_map.get(raw_risk, 'MED')
+    if raw_risk in ('NOGO', 'HIGH'):
+        high_cnt = (len((brief.get('dep_notam') or {}).get('high') or [])
+                    + len((brief.get('arr_notam') or {}).get('high') or []))
+        if high_cnt == 0 and raw_risk == 'NOGO':
+            risk = 'MED'
+            notes = list(ai.get('notes') or [])
+            notes.append('模型给出 NOGO 但无 HIGH 项，已按规则调整为 MED')
+            ai['notes'] = notes
+    concl['risk'] = risk
+    low_lines = _low_lines(brief)
+    if low_lines:
+        fs = concl.get('factors')
+        fs = [str(x) for x in fs] if isinstance(fs, list) else []
+        fs = [x for x in fs if '低影响' not in x]
+        if len(fs) > 5:
+            fs = fs[:5]
+        fs += low_lines
+        concl['factors'] = fs[:7]
+    brief['ai'] = {
+        'model': cfg['model'],
+        'elapsed_ms': int((time.time() - t0) * 1000),
+        'prefetch_ms': meta.get('prefetch_ms', 0),
+        'llm_ms': meta.get('llm_ms', 0),
+        'notam_count': meta.get('notam_count', 0),
+        'prompt_chars': meta.get('prompt_chars', 0),
+        'usage': usage,
+        'conclusion': ai.get('conclusion') or {},
+        'taf_note': ai.get('taf_note') or '',
+        'wx_note': ai.get('wx_note') or '',
+        'notes': ai.get('notes') or [],
+        'judgments': len(ai.get('notam_judgments') or []),
+    }
+    return brief, 200
+
 # ── HTTP server (stdlib, no external dependencies) ────────────────
 class Handler(BaseHTTPRequestHandler):
     server_version = 'AviationBrief/1.0'
@@ -1555,7 +2072,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         try:
-            if urlparse(self.path).path != '/api/brief':
+            path = urlparse(self.path).path
+            if path not in ('/api/brief', '/api/agent', '/api/llm/test'):
                 self._json({'error': 'not found'}, 404)
                 return
             length = int(self.headers.get('Content-Length') or 0)
@@ -1564,7 +2082,22 @@ class Handler(BaseHTTPRequestHandler):
                 params = json.loads(raw.decode('utf-8')) if raw else {}
             except Exception:
                 params = {}
-            res, code = build_brief(params)
+            if path == '/api/brief':
+                res, code = build_brief(params)
+            elif path == '/api/agent':
+                res, code = agent_brief(params)
+            else:
+                cfg = _llm_cfg(params)
+                if not cfg['api_key']:
+                    self._json({'ok': False, 'error': '未填写 API Key（或服务器未设置 LLM_API_KEY）'}, 400)
+                    return
+                try:
+                    r = llm_chat([{'role': 'user', 'content': '只回复两个字母：OK'}], None, cfg, timeout=45)
+                    msg = ((r.get('choices') or [{}])[0].get('message') or {}).get('content') or ''
+                    self._json({'ok': True, 'model': cfg['model'], 'reply': msg.strip()[:60]})
+                except Exception as e:
+                    self._json({'ok': False, 'error': str(e)[:200]}, 502)
+                return
             self._json(res, code)
         except Exception as e:
             self._json({'error': f'服务器内部错误: {str(e)[:200]}'}, 500)

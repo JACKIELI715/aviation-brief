@@ -59,6 +59,27 @@
     C) 2610312359
     E) TWY E BTN INT E2 AND INT E4 CLSD
 
+【AI 智能体模式】(大模型判读通告 · 需服务器模式)
+  页面右上角 ⚙ → 判读方式 → 选「AI 智能体」
+  · 服务器先并行预取 WX / TAF / NOTAM（带参考等级与有效期），
+    再一次请求大模型按内置规则判读（C 类机型、通告分级、LOW 合并、
+    GND CHECK 表述等），输出结论、逐条中文摘要与机组动作建议
+  · 默认渠道：魔搭 ModelScope + deepseek-ai/DeepSeek-V4.1-Flash-1017
+    (base: https://api-inference.modelscope.cn/v1，Key 用魔搭访问令牌)
+  · 备选渠道：魔搭上的 Qwen/Qwen3.5-27B（页面里切换）
+  · 另保留「自定义」渠道，可填任意 OpenAI 兼容服务
+    （如 DeepSeek 官方、阿里百炼，自行填 Base URL / 模型 / Key）
+  · 魔搭渠道自动关闭思维链（实测开思维链约 48s 且判读条数被截断；
+    关闭后 DeepSeek V4.1 Flash 判读 49 条通告约 20s）
+  · API Key 两种放法：
+    1) 网页「大模型配置」里填（存浏览器本地，换设备需重填）
+    2) 启动时设置环境变量 LLM_API_KEY（网页端不出现 Key）
+       可选：LLM_BASE_URL、LLM_MODEL、LLM_NO_THINK=1（手动关闭思考链）
+       Mac/Linux 示例:
+         LLM_API_KEY=ms-xxx python3 server.py
+  · 填好后点「测试连接」确认；AI 失败会自动回退规则引擎
+  · 直接双击 app.html（本地文件模式）不支持 AI，只能用规则引擎
+
 【数据来源设置】(页面右上角 ⚙ 按钮)
   NOTAM 来源:
     · 合并(默认) — 在线/缓存 + 手动粘贴，
