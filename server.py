@@ -1937,7 +1937,7 @@ def _low_lines(brief):
                 crane += 1
                 h = re.findall(r'(\d{2,3})\s*m', s) or re.findall(r'MAX HGT[^0-9]*(\d{2,3})\s*M', d, re.I)
                 heights += h
-            elif '停机位' in s:
+            elif re.search(r'停机位.*(关闭|CLSD|不可用|暂停)', s):
                 stands += 1
             elif s and s not in others:
                 others.append(s)
@@ -1965,7 +1965,7 @@ def _low_lines(brief):
                 merged.append(s)
         for it in merged:
             parts.append(it + '、'.join(aip[it]) if it in aip else it)
-        parts = parts[:5]
+        parts = parts[:6]
         if parts:
             out.append(f'{icao}：' + '；'.join(parts))
     return out
@@ -2019,10 +2019,10 @@ def agent_brief(params):
         if isinstance(ns, list):
             ai['notes'] = [
                 n for n in ns
-                if not ((('WX' in n) or ('天气' in n)) and any(w in n for w in ('缺失', '未获取', '无法获取', '获取失败')))
+                if not ((('WX' in n) or ('天气' in n)) and any(w in n for w in ('缺失', '未获取', '无法获取', '获取失败', '无数据', '没有数据', '数据为空', '无实况')))
             ]
         # wx_note 同样可能误报缺失 → 用实际观测值重建
-        if any(w in (ai.get('wx_note') or '') for w in ('缺失', '未获取', '为空', '获取失败')):
+        if any(w in (ai.get('wx_note') or '') for w in ('缺失', '未获取', '为空', '获取失败', '无数据', '没有数据', '数据为空', '无实况')):
             def _wx_part(icao, phase, w):
                 if not w:
                     return ''
@@ -2056,6 +2056,8 @@ def agent_brief(params):
         _ti[_icao] = {'zero': len(_rel) == 0, 'tokens': _tokens}
 
     def _bad_face(s):
+        if brief.get('dep_wx') and brief.get('arr_wx') and any(w in s for w in ('无数据', '数据缺失', '未获取', '获取失败')) and re.search(r'WX|天气|实况', s):
+            return True
         for _icao, _x in _ti.items():
             if any(tok in s for tok in _x['tokens']):
                 return True
