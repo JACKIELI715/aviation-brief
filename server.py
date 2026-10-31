@@ -1596,6 +1596,7 @@ AGENT_SYSTEM_PROMPT = """你是航空运行方向的 WX / TAF / NOTAM 判读智�
   · LOW 项一律不要写进 factors（界面会按机场自动合并），只写 HIGH / MED / GND CHECK / CHECK TIME 的依据。
 - actions 只写机组需要核对/确认的动作（≤3 条），不写放行决定。
 - factors / actions 必须写成中文结论（如「POU/CEN VOR 失效，多条 SID/STAR 不可用」），禁止只列通告编号。可带 1–2 个关键编号辅助定位。
+- headline / factors / actions 只能引用「覆盖目标时刻」或「影响窗口内」的天气变化组；TAF 原文或 taf_note 里落在窗口外（如明显早于落地时刻）的 TEMPO/PROB 组不得写入结论，也不得据此提高风险等级。
 
 【输出 JSON 结构】
 {
@@ -2020,6 +2021,64 @@ def agent_brief(params):
                 n for n in ns
                 if not ((('WX' in n) or ('天气' in n)) and any(w in n for w in ('缺失', '未获取', '无法获取', '获取失败')))
             ]
+        # wx_note 同样可能误报缺失 → 用实际观测值重建
+        if any(w in (ai.get('wx_note') or '') for w in ('缺失', '未获取', '为空', '获取失败')):
+            def _wx_part(icao, phase, w):
+                if not w:
+                    return ''
+                bits = []
+                if w.get('vis'):
+                    bits.append(f'能见度{w["vis"]}m')
+                if w.get('wx_name'):
+                    bits.append(str(w['wx_name']))
+                if w.get('wind_dir') is not None and w.get('wind_spd') is not None:
+                    bits.append(f'风{w["wind_dir"]}°/{w["wind_spd"]}mps')
+                if w.get('pop') is not None:
+                    bits.append(f'降水概率{w["pop"]}%')
+                return f'{icao} {phase}时段' + '、'.join(bits)
+            ai['wx_note'] = '；'.join(x for x in [
+                _wx_part(brief.get('dep'), '起飞', brief.get('dep_wx')),
+                _wx_part(brief.get('arr'), '落地', brief.get('arr_wx')),
+            ] if x) + '。'
+    # TAF 变化组落在窗口外时，不允许写入结论/依据/动作（模型常照抄 TAF 原文）
+    _ti = {}
+    for _key, _icao in (('dep_taf', brief.get('dep')), ('taf', brief.get('arr'))):
+        _t = brief.get(_key) or {}
+        if not _t or _t.get('error'):
+            continue
+        _rel = list(_t.get('target_groups') or []) + list(_t.get('impact_groups') or [])
+        _gs = parse_taf_groups(_t.get('raw') or '')
+        _all = _gs['TEMPO'] + _gs['BECMG'] + _gs['FM'] + _gs['PROB']
+        _tokens = set()
+        for _g in _all:
+            if _g not in _rel:
+                _tokens.update(re.findall(r'\d{4}/\d{4}', _g))
+        _ti[_icao] = {'zero': len(_rel) == 0, 'tokens': _tokens}
+
+    def _bad_face(s):
+        for _icao, _x in _ti.items():
+            if any(tok in s for tok in _x['tokens']):
+                return True
+            if _x['zero'] and _icao in s and re.search(r'TEMPO|PROB\d|雷雨|TSRA|CB', s, re.I):
+                return True
+        return False
+
+    fs = concl.get('factors')
+    if isinstance(fs, list):
+        concl['factors'] = [f for f in fs if not _bad_face(str(f))]
+    hl = concl.get('headline')
+    if isinstance(hl, str) and hl:
+        kept = [c for c in re.split(r'[；;]', hl) if c.strip() and not _bad_face(c)]
+        concl['headline'] = '；'.join(kept) if kept else '无显著天气影响'
+    acts = concl.get('actions')
+    if isinstance(acts, list):
+        concl['actions'] = [a for a in acts if not _bad_face(str(a))]
+    # 窗口外的 TAF 变化组也不要在 notes 里讨论（模型常误判是否在窗口内）
+    _irr_tokens = set()
+    for _x in _ti.values():
+        _irr_tokens.update(_x['tokens'])
+    if _irr_tokens and isinstance(ai.get('notes'), list):
+        ai['notes'] = [n for n in ai['notes'] if not any(tok in n for tok in _irr_tokens)]
     brief['ai'] = {
         'model': cfg['model'],
         'elapsed_ms': int((time.time() - t0) * 1000),
