@@ -1574,10 +1574,10 @@ AGENT_SYSTEM_PROMPT = """你是航空运行方向的 WX / TAF / NOTAM 判读智�
 【必须遵守】
 - 凡对 C 类机型不构成运行影响的（机位关闭、翼展 ≤36m/≤65m、未明写性能影响的障碍物）一律判 LOW，且不要解释「C 类不受影响」这类原因。
 - LOW 也必须逐条给中文摘要（≤25 字），不得省略；内容再小也要把要点翻成中文。
-- 通告列表每行格式：编号|规则引擎参考等级|生效~失效|E)原文。参考等级仅供对照，与航班时段无关或明显判错时可改判。
+- 通告列表每行格式：编号|规则引擎参考等级|生效~失效|E)原文。参考等级仅供对照，明显判错时可改判。
 - HIGH / MED / GND CHECK / CHECK TIME / LOW 必须逐条输出判读，一条不漏；LOW 也要给中文摘要（≤20 字）。
 - summary 必须是中文；禁止复制/截断英文原文充当摘要。确实无法归类的写「xx类通告，详见原文」。
-- 通告生效时间与航班时段（起飞前 1h ~ 落地后 3h）无交集、或尚未生效的，不参与风险；必要时在 notes 提一句。
+- 通告列表已按航班时段（目标时刻前 2h ~ 后 3h）预筛，窗口外通告不会出现在列表中；列表末尾「另有 N 条…已省略」只是数量提示，不要写入 notes / factors / conclusion。
 - 中文精简，每条 summary ≤40 字；能删的字都删掉，只保留定位所需信息。
 - 摘要规范（必须遵守）：
   · 滑行道区段关闭：写「编号 (端点-端点) 关闭」，只写一次「关闭」，不写「部分关闭 / 段」。例：TWY L CLSD BTN ACFT STAND F32 AND ACFT STAND F34 →「L (F32-F34) 关闭」；TWY E BTN INT TWY K AND INT E2 CLSD →「E (K-E2) 关闭」；TWY N BTN T12 AND T13 →「N (T12-T13) 关闭」。
@@ -1789,12 +1789,22 @@ def _agent_taf_block(icao, t, target):
     lines.append('原始报文：' + (t.get('raw') or '')[:600])
     return '\n'.join(lines)
 
-def _agent_notam_block(label, icao, nd):
+def _agent_notam_block(label, icao, nd, fw=None):
+    """返回 (文本, 实际送入模型的通告数)。通告先按航班时段过滤，窗口外的只给数量提示。"""
     if not isinstance(nd, dict):
-        return f'【NOTAM {label} {icao}】无数据'
+        return f'【NOTAM {label} {icao}】无数据', 0
     active = nd.get('active') or []
+    skipped = 0
+    if fw and fw[0] is not None and fw[1] is not None:
+        kept = []
+        for n in active:
+            if notam_overlaps_flight(n, fw[0], fw[1]):
+                kept.append(n)
+            else:
+                skipped += 1
+        active = kept
     warn = nd.get('source_warning') or ''
-    head = f'【NOTAM {label} {icao}，{len(active)} 条' + (f'；{warn}' if warn else '') + '】'
+    head = f'【NOTAM {label} {icao}，本航班时段内 {len(active)} 条' + (f'；{warn}' if warn else '') + '】'
     rows = []
     ordered = sorted(active, key=lambda n: classify_notam(dict(n)) == 'LOW')
     for n in ordered[:AGENT_NOTAM_LIMIT]:
@@ -1802,9 +1812,16 @@ def _agent_notam_block(label, icao, nd):
         rows.append(f"{n.get('id', '')}|{classify_notam(dict(n))}|"
                     f"{(n.get('effective') or n.get('eff_from') or '')[:20]}"
                     f"~{(n.get('expires') or '')[:20]}|{desc}")
+    sent = min(len(active), AGENT_NOTAM_LIMIT)
     if len(active) > AGENT_NOTAM_LIMIT:
         rows.append(f'（另有 {len(active) - AGENT_NOTAM_LIMIT} 条通告未列出，沿用规则引擎结果）')
-    return head + '\n' + '\n'.join(rows)
+    if skipped:
+        if fw:
+            win = f'{fw[0]:%m-%d %H:%M}~{fw[1]:%m-%d %H:%M} UTC'
+        else:
+            win = '航班时段'
+        rows.append(f'（另有 {skipped} 条未过期通告不在本航班时段（{win}），已省略，无需判读）')
+    return head + '\n' + '\n'.join(rows), sent
 
 def _repair_json(t):
     """尽力修复被 max_tokens 截断的 JSON（补全字符串与括号）。"""
@@ -1909,8 +1926,17 @@ def run_agent(params, cfg):
     parts.append(_agent_taf_block(arr, data.get('arr_taf'), ctx['arr_taf_target']))
     if dep != arr:
         parts.append(_agent_taf_block(dep, data.get('dep_taf'), ctx['dep_taf_target']))
-    parts.append(_agent_notam_block('起飞机场', dep, data.get('dep_notam')))
-    parts.append(_agent_notam_block('落地机场', arr, data.get('arr_notam')))
+
+    def _agent_win(dt_str):
+        dt = datetime.strptime(dt_str, '%Y-%m-%d %H:%M UTC').replace(tzinfo=timezone.utc)
+        return dt - timedelta(hours=WX_WIN_BEFORE), dt + timedelta(hours=WX_WIN_AFTER)
+
+    dep_win = _agent_win(ctx['dep_utc'])
+    arr_win = _agent_win(ctx['arr_utc'])
+    dep_block, dep_sent = _agent_notam_block('起飞机场', dep, data.get('dep_notam'), dep_win)
+    arr_block, arr_sent = _agent_notam_block('落地机场', arr, data.get('arr_notam'), arr_win)
+    parts.append(dep_block)
+    parts.append(arr_block)
     parts.append('</DATA>')
     user = '\n'.join(parts)
 
@@ -1962,12 +1988,8 @@ def run_agent(params, cfg):
         js = ai.get('notam_judgments')
         ai['notam_judgments'] = js if isinstance(js, list) else []
 
-    def _count(key):
-        nd = data.get(key)
-        return len(nd.get('active') or []) if isinstance(nd, dict) else 0
-
     meta = {'prefetch_ms': prefetch_ms, 'llm_ms': llm_ms,
-            'notam_count': _count('dep_notam') + _count('arr_notam'),
+            'notam_count': dep_sent + arr_sent,
             'prompt_chars': len(user), 'scope': scope,
             'corrections': len(ai.get('notam_judgments') or [])}
     return ai, meta, usage
