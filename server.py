@@ -164,6 +164,7 @@ AIRPORTS = {
     'ZSJJ': (29.4769, 115.8011, '九江'),
     'ZSJN': (36.8572, 117.216, '济南'),
     'ZSJU': (28.9661, 118.8988, '衢州'),
+    'ZSJX': (30.7, 120.6769, '嘉兴南湖'),
     'ZSLG': (34.4141, 119.179, '连云港'),
     'ZSLO': (25.6759, 116.7459, '龙岩'),
     'ZSLQ': (28.5622, 121.429, '台州'),
@@ -208,6 +209,7 @@ AIRPORTS = {
     'ZUJZ': (32.8533, 103.6822, '九寨黄龙'),
     'ZUKD': (30.1425, 101.7387, '康定'),
     'ZUKJ': (26.972, 107.988, '凯里'),
+    'ZULA': (31.502, 106.0344, '阆中古城'),
     'ZULB': (25.4525, 107.9617, '荔波'),
     'ZULS': (29.298, 90.912, '拉萨'),
     'ZULZ': (29.0304, 105.4684, '泸州'),
@@ -283,6 +285,17 @@ AIRPORTS = {
     'ZYYK': (40.5425, 122.3586, '营口'),
 }
 
+# IATA → ICAO 常见别名（用户常直接输入三字码）
+IATA_TO_ICAO = {
+    'LZG': 'ZULA', 'JNH': 'ZSJX', 'AQG': 'ZSAQ', 'JHG': 'ZPJH',
+}
+
+def norm_icao(code):
+    code = (code or '').strip().upper()
+    if len(code) == 3:
+        return IATA_TO_ICAO.get(code, code)
+    return code
+
 # ── WX Code mapping ───────────────────────────────────────────────
 WX_NAME = {
     0: 'SKC', 1: 'FEW', 2: 'SCT', 3: 'BKN',
@@ -346,7 +359,7 @@ def risk_wx(pop, vis, ws_code):
         return 'MED'
     return 'LOW'
 
-# ── WX ────────────────────────────────────────────────────────────
+_WX_MISSING_WORDS = ('缺失', '未获取', '无法获取', '获取失败', '无数据', '没有数据', '数据为空', '数据块为空', '为空', '无实况', '没有实况', '未获取实时')
 def resolve_coords(icao):
     """解析机场坐标: 预置库 → AviationWeather stationinfo → None。"""
     if icao in AIRPORTS:
@@ -1336,8 +1349,8 @@ def prewarm_cache():
 # ── Brief assembly (shared by GET/POST) ───────────────────────────
 def build_brief(params):
     """Assemble the brief response from a params dict. Returns (dict, http_status)."""
-    dep = (params.get('dep') or '').upper()
-    arr = (params.get('arr') or '').upper()
+    dep = norm_icao(params.get('dep'))
+    arr = norm_icao(params.get('arr'))
     date = params.get('date', '')
     dep_time = params.get('dep_time', '')
     arr_time = params.get('arr_time', '')
@@ -1659,8 +1672,8 @@ def llm_chat(messages, tools, cfg, timeout=120, temperature=0.1, response_format
 
 def _agent_ctx(params):
     """计算航班信息与目标 UTC 时刻（与 build_brief 一致）。"""
-    dep = (params.get('dep') or '').upper()
-    arr = (params.get('arr') or '').upper()
+    dep = norm_icao(params.get('dep'))
+    arr = norm_icao(params.get('arr'))
     date = params.get('date', '')
     dep_time = params.get('dep_time', '')
     arr_time = params.get('arr_time', '')
@@ -2019,10 +2032,10 @@ def agent_brief(params):
         if isinstance(ns, list):
             ai['notes'] = [
                 n for n in ns
-                if not ((('WX' in n) or ('天气' in n)) and any(w in n for w in ('缺失', '未获取', '无法获取', '获取失败', '无数据', '没有数据', '数据为空', '无实况')))
+                if not (re.search(r'WX|天气|实况', n) and any(w in n for w in _WX_MISSING_WORDS))
             ]
         # wx_note 同样可能误报缺失 → 用实际观测值重建
-        if any(w in (ai.get('wx_note') or '') for w in ('缺失', '未获取', '为空', '获取失败', '无数据', '没有数据', '数据为空', '无实况')):
+        if any(w in (ai.get('wx_note') or '') for w in _WX_MISSING_WORDS):
             def _wx_part(icao, phase, w):
                 if not w:
                     return ''
@@ -2056,7 +2069,7 @@ def agent_brief(params):
         _ti[_icao] = {'zero': len(_rel) == 0, 'tokens': _tokens}
 
     def _bad_face(s):
-        if brief.get('dep_wx') and brief.get('arr_wx') and any(w in s for w in ('无数据', '数据缺失', '未获取', '获取失败')) and re.search(r'WX|天气|实况', s):
+        if brief.get('dep_wx') and brief.get('arr_wx') and any(w in s for w in _WX_MISSING_WORDS) and re.search(r'WX|天气|实况', s):
             return True
         for _icao, _x in _ti.items():
             if any(tok in s for tok in _x['tokens']):
