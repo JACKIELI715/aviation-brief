@@ -2,7 +2,7 @@
  * 仅缓存"应用外壳"(HTML/manifest/图标)，接口请求一律走网络。
  * 注意: iOS 通过 http://内网IP 访问时 SW 无法注册(需 https/localhost)，
  * 此时离线缓存不可用，但"添加到主屏幕"仍可正常安装。 */
-const CACHE = 'avbrief-v14';
+const CACHE = 'avbrief-v15';
 const SHELL = ['/', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png'];
 
 self.addEventListener('install', function (e) {
@@ -23,16 +23,23 @@ self.addEventListener('fetch', function (e) {
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;          // 外部 API 不拦截
   if (url.pathname.indexOf('/api/') === 0) return;        // 接口不缓存
-  e.respondWith(
-    caches.match(req).then(function (hit) {
-      const net = fetch(req).then(function (res) {
-        if (res && res.ok && (url.pathname === '/' || SHELL.indexOf(url.pathname) >= 0)) {
+  const isShell = url.pathname === '/' || SHELL.indexOf(url.pathname) >= 0;
+  if (isShell) {
+    // 应用外壳走网络优先，避免更新后仍加载旧页面/旧脚本；离线时回退缓存
+    e.respondWith(
+      fetch(req).then(function (res) {
+        if (res && res.ok) {
           const clone = res.clone();
           caches.open(CACHE).then(function (c) { c.put(req, clone); });
         }
         return res;
-      }).catch(function () { return hit; });
-      return hit || net;
+      }).catch(function () { return caches.match(req); })
+    );
+    return;
+  }
+  e.respondWith(
+    caches.match(req).then(function (hit) {
+      return hit || fetch(req);
     })
   );
 });
