@@ -720,13 +720,18 @@ def classify_notam(notam, fw_start=None, fw_end=None):
         return 'MED'
 
     # MED: NAV aids U/S / ON TEST / DO NOT USE (EN+CN) — 归入 MED, 按时间窗口判定
-    if re.search(r'VOR/DME|DVOR/DME', desc) and re.search(r'U/S|WITHDRAWN|OUT OF SERVICE|不提供使用|限用|停用', desc):
+    if re.search(r'VOR/DME|DVOR/DME', desc) and re.search(r'U/S|UNSERVICEABLE|WITHDRAWN|OUT OF SERVICE|不提供使用|限用|停用', desc):
         return 'MED'
-    if re.search(r'\bILS\b|\bDME\b|\bNDB\b|\bVOR\b', desc) and re.search(r'U/S|OUT OF SERVICE|ON TEST|DO NOT USE|不提供使用|停用|测试|禁止使用', desc):
+    if re.search(r'\bILS\b|\bLOC\b|\bDME\b|\bNDB\b|\bVOR\b|\bLDA\b', desc) and re.search(
+            r'U/S|UNSERVICEABLE|UNSVC|OUT OF SERVICE|NOT AVBL|NOT AVAILABLE|ON TEST|DO NOT USE|不提供使用|停用|测试|禁止使用', desc):
         return 'MED'
     if re.search(r'APCH LGT.*DOWNGRADE|DOWNGRADE TO CAT', desc):
         return 'MED'
     if re.search(r'(SID|STAR|IAC|PROCEDURE).*?(U/S|停用)', desc):
+        return 'MED'
+    if re.search(r'BEARING\s+FLUCTUATION', desc):
+        return 'MED'
+    if re.search(r'TAKEOFF MINIMUMS', desc) and re.search(r'CRANE|OBST', desc):
         return 'MED'
 
     # MED: taxiway full closure (EN)
@@ -1147,6 +1152,10 @@ def fetch_notams_faa(icao):
         if not desc:
             continue
         desc = html.unescape(desc)
+        # 清洗 FAA 返回的表格残片：CLSDTWY → CLSD TWY；去掉 RSTRCTN>0? TO| 噪声
+        desc = re.sub(r'\bCLSD(?=(?:TWY|RWY|TXL|APRON|LINK|STAND))', 'CLSD ', desc)
+        desc = re.sub(r'\s*RSTRCTN>0\?\s*TO\|?', '', desc)
+        desc = re.sub(r'\s+', ' ', desc).strip()
         if not nid:
             mid = re.search(r'([A-Z]\d{3,4}/\d{2})', raw)
             nid = mid.group(1) if mid else ''
@@ -1587,6 +1596,11 @@ AGENT_SYSTEM_PROMPT = """你是航空运行方向的 WX / TAF / NOTAM 判读智�
   · 机位（PARKING STAND / PRKG STAND / ACFT STAND / AIRCRAFT STAND）统一写成「停机位」：停机位 GT1/GT2 关闭；区间写「停机位 F32-F34」。
   · 导航设施必须写识别码（VKL、LMN、POU、CEN 等），ILS/LOC 写跑道号，例：「LMN VOR/DME 不工作」「32L ILS 下滑台不工作」。
   · TRIGGER NOTAM / AIP 修订：必须译出「改了什么」，不得只写「触发通告」。例：CHANGES TO WMKP AD 2.10, AD 2.12, AD 2.15 AND ADC/APDC/GMC →「AIP 修订 04/26 生效：WMKP 机场资料 2.10/2.12/2.15、机场图/停机位图/地面活动图更新」。
+  · 无人机：UNMANNED ACFT / UAS / UAV / DRONE →「无人机活动」；BEYOND VISUAL LINE OF SIGHT / BVLOS →「无人机活动（超视距）」。不要写坐标。
+  · 障碍灯失效：OBST LGT U/S →「障碍灯不工作（建筑/烟囱/输电塔）」，不得写成「临时障碍物」。
+  · 机位设备：VISUAL-DOCKING-GUIDANCE-SYSTEM U/S →「VDGS 不可用」；涉及 TSAT →「TSAT 显示不可用（VDGS 故障）」。
+  · 程序修订：ILS/LOC ... AMDT xx →「RWYxx 进近程序修订（AMDT xx）」；FAA 的 xxx DEPARTURE ... TRANSITION NA →「xxx 离场程序修订（过渡仅限 RNAV/GPS）」。
+  · 障碍物数据：AMEND EXISTING ID / OBSTACLE DATASET 修订 →「障碍物信息更新（AIP 障碍物数据）」，不要写成新增塔吊。
 - 摘要中不得出现 TWY / RWY / INT / CLSD / U/S / BTN / ACFT STAND 等英文词，一律写成中文；机位写「停机位」。
 - 不得直接输出英文原文充当摘要，也不得只写「VOR/DME 不工作」这类丢失设施信息的表述。
 
@@ -2056,19 +2070,37 @@ def apply_ai_judgments(brief, judgments):
         rebuilt['folded'] = folded
         brief[key] = rebuilt
 
+def _low_fallback_summary(desc):
+    """无 AI 摘要时的 LOW 兜底分类（仅覆盖常见且易误判的类别）。"""
+    d = (desc or '').upper()
+    if re.search(r'OBST\s*LGT\s*(?:U/S|UNSERVICEABLE|OUT OF SERVICE)', d):
+        return '障碍灯不工作'
+    if re.search(r'UNMANNED\s+(?:ACFT|AIRCRAFT)|BEYOND\s+VISUAL\s+LINE\s+OF\s+SIGHT|\bUAS\b|\bUAV\b|\bDRONE\b|UA\s+ACT', d):
+        return '无人机活动（超视距）' if re.search(r'BEYOND\s+VISUAL\s+LINE\s+OF\s+SIGHT|\bBVLOS\b', d) else '无人机活动（指定区域）'
+    if re.search(r'RWY\s+INCURSION\s+WARNING', d):
+        return '跑道侵入警告系统暂停（维护）'
+    if 'VISUAL-DOCKING-GUIDANCE-SYSTEM' in d:
+        m = re.search(r'SPOT\s+(\d+)(?:\s+(?:THRU|TO)\s+(\d+))?', d)
+        spots = f'{m.group(1)}–{m.group(2)} 号机位' if m and m.group(2) else (f'{m.group(1)} 号机位' if m else '机位')
+        return f'{spots} TSAT 显示不可用（VDGS 故障）' if 'TSAT' in d else f'{spots} VDGS 不可用'
+    return ''
+
+
 def _low_lines(brief):
-    """把 LOW 项按机场合并成结论依据（塔吊写处数与高度，机位写处数）。"""
+    """把 LOW 项按机场合并成结论依据（障碍灯/塔吊/机位写处数）。"""
     out = []
     for key, icao in (('dep_notam', brief.get('dep')), ('arr_notam', brief.get('arr'))):
         if not icao:
             continue
         items = (brief.get(key) or {}).get('low') or []
-        crane = stands = 0
+        crane = stands = obst_lgt = 0
         heights, others = [], []
         for n in items:
-            s = (n.get('ai_summary') or '').strip()
             d = n.get('desc') or ''
-            if re.search(r'(塔吊|吊车|起重机|障碍物)', s):
+            s = (n.get('ai_summary') or '').strip() or _low_fallback_summary(d)
+            if '障碍灯' in s or re.search(r'OBST\s*LGT\s*(?:U/S|UNSERVICEABLE|OUT OF SERVICE)', d, re.I):
+                obst_lgt += 1
+            elif re.search(r'(塔吊|吊车|起重机)', s) or re.search(r'\bCRANE\b', d, re.I):
                 crane += 1
                 h = re.findall(r'(\d{2,3})\s*m', s) or re.findall(r'MAX HGT[^0-9]*(\d{2,3})\s*M', d, re.I)
                 heights += h
@@ -2077,6 +2109,8 @@ def _low_lines(brief):
             elif s and s not in others:
                 others.append(s)
         parts = []
+        if obst_lgt:
+            parts.append(f'{obst_lgt} 处障碍灯不工作')
         if crane:
             hh = ''
             if heights:

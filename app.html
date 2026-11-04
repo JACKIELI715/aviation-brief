@@ -1015,9 +1015,11 @@ function classifyNotam(notam, flightWindow) {
 
   // MED: 导航设备不工作/测试/禁止使用 (EN+CN) — 归入 MED, 按时间窗口判定
   if (/VOR\/DME|DVOR\/DME/.test(desc) && /U\/S|WITHDRAWN|OUT OF SERVICE|不提供使用|限用|停用/.test(desc)) return 'MED';
-  if (/\bILS\b|\bDME\b|\bNDB\b|\bVOR\b/.test(desc) && /U\/S|OUT OF SERVICE|ON TEST|DO NOT USE|不提供使用|停用|测试|禁止使用/.test(desc)) return 'MED';
+  if (/\bILS\b|\bLOC\b|\bDME\b|\bNDB\b|\bVOR\b|\bLDA\b/.test(desc) && /U\/S|UNSERVICEABLE|UNSVC|OUT OF SERVICE|NOT AVBL|NOT AVAILABLE|ON TEST|DO NOT USE|不提供使用|停用|测试|禁止使用/.test(desc)) return 'MED';
   if (/APCH LGT.*DOWNGRADE|DOWNGRADE TO CAT/.test(desc)) return 'MED';
   if (/(SID|STAR|IAC|PROCEDURE).*?(U\/S|停用)/.test(desc)) return 'MED';
+  if (/(?:DVOR|VOR\/DME).*BEARING\s+FLUCTUATION|BEARING\s+FLUCTUATION.*(?:DVOR|VOR)/.test(desc)) return 'MED';
+  if (/TAKEOFF MINIMUMS/.test(desc) && /CRANE|OBST/.test(desc)) return 'MED';
 
   // MED: 滑行道整段关闭 (EN: "TWY Q11 CLSD BTN ..." = Q11整段 → MED)
   if (/TWY\s+\w+\s+CLSD(?!\s+ONLY|\s+BTN.*ONLY|\s+(?:EAST|WEST|NORTH|SOUTH)\s+OF\b)/.test(desc)) return 'MED';
@@ -1736,6 +1738,10 @@ function parseFaaNotams(json) {
     if (!desc) desc = raw.replace(/\s+/g, ' ').trim();
     if (!desc) continue;
     desc = decodeEntities(desc);
+    // 清洗 FAA 表格残片：CLSDTWY → CLSD TWY；去掉 RSTRCTN>0? TO| 噪声
+    desc = desc.replace(/\bCLSD(?=(?:TWY|RWY|TXL|APRON|LINK|STAND))/g, 'CLSD ')
+               .replace(/\s*RSTRCTN>0\?\s*TO\|?/g, '')
+               .replace(/\s+/g, ' ').trim();
     if (!nid) { const mi = raw.match(/([A-Z]\d{3,4}\/\d{2})/); nid = mi ? mi[1] : ''; }
     out.push({ id: nid, q_code: qCode, priority: '5', effective: eff,
                expires: exp, desc, expired: notamExpired(exp, nid), online: true });
@@ -2152,10 +2158,51 @@ function summarizeBird(desc) {
   return `${r ? `半径${r}KM内` : '本场及周边'}${kinds.slice(0, 3).join('/')}活动 · 鸟击风险`;
 }
 
+function summarizeAipSup(desc) {
+  const d = desc.toUpperCase();
+  if (!d.includes('REF AIP SUP')) return null;
+  const sup = d.match(/REF\s+AIP\s+SUP\s*([0-9]{1,3}\/[0-9]{2})/);
+  const nav = d.match(/LOC\/DME\s*(\d+)/);
+  const ident = d.match(/LOC\/DME\s*\d+\s*\(([A-Z]{2,4})\)/);
+  const until = d.match(/UNTIL\s+\d{4}UTC\s+(\d{2})\s+([A-Z]{3})\s+\d{4}/);
+  if (!nav && !until) return null;
+  let s = `AIP SUP${sup ? ' ' + sup[1] : ''}`;
+  if (nav) s += `：LOC/DME ${nav[1]}${ident ? '（' + ident[1] + '）' : ''}不可用`;
+  if (until) {
+    const mm = {JAN:'01',FEB:'02',MAR:'03',APR:'04',MAY:'05',JUN:'06',JUL:'07',AUG:'08',SEP:'09',OCT:'10',NOV:'11',DEC:'12'}[until[2]] || until[2];
+    s += `（至 ${mm}-${until[1]}）`;
+  }
+  return s;
+}
+
 function summarizeMed(desc) {
+  const d = desc.toUpperCase();
+  const aipSup = summarizeAipSup(desc);
+  if (aipSup) return aipSup;
+  // ── VOR/DME 方位波动（周边塔吊）──
+  if (/BEARING FLUCTUATIONS?/.test(d)) {
+    const m = d.match(/(?:DVOR\/DME|VOR\/DME|VOR)\s+([A-Z]{2,4})/);
+    return `${m ? m[1] + ' ' : ''}VOR/DME 方位波动（周边塔吊）`;
+  }
+  // ── 仪表进近程序不可用 ──
+  if (/INSTRUMENT APPROACH PROCEDURE NOT AUTHORIZED/.test(d)) {
+    const ils = Array.from(d.matchAll(/ILS\s+([\w-]+)\s+RWY\s*(\d{1,2}[RLC]?)/g));
+    const rwy = ils.length ? ils[0][2] : (d.match(/RWY\s*(\d{1,2}[RLC]?)/) || [])[1];
+    const names = ils.map(m => m[1]).filter((v, i, a) => a.indexOf(v) === i).join('/');
+    const cat = (d.match(/CAT\s*(I{1,3})/) || [])[1];
+    return `ILS${names ? ' ' + names : ''}${rwy ? ' RWY' + rwy : ''}${cat ? ' CAT ' + cat : ''} 进近不可用`;
+  }
+  // ── 机位 VDGS / TSAT 故障 ──
+  if (d.includes('VISUAL-DOCKING-GUIDANCE-SYSTEM') && /U\/S|TROUBLE|UNSERVICEABLE/.test(d)) {
+    const m = d.match(/SPOT\s+(\d+)(?:\s+(?:THRU|TO)\s+(\d+))?/);
+    const spots = m ? (m[2] ? `${m[1]}–${m[2]} 号机位` : `${m[1]} 号机位`) : '机位';
+    return d.includes('TSAT') ? `${spots} TSAT 显示不可用（VDGS 故障）` : `${spots} VDGS 不可用`;
+  }
   // ── 导航设备 (ILS/VOR/DME/NDB) 不工作/测试/禁限用 — 极简优先 ──
   const nav = summarizeNav(desc);
   if (nav) return nav;
+  // ── 离场程序修订（含临时塔吊起飞标准）──
+  if (/TAKEOFF MINIMUMS/.test(d) && /CRANE|OBST/.test(d)) return '离场程序修订，含临时塔吊起飞标准';
   // ── 鸟类活动：极简优先 ──
   const bird = summarizeBird(desc);
   if (bird) return bird;
@@ -2167,7 +2214,6 @@ function summarizeMed(desc) {
   // ── 中文障碍物影响优先提取（关键核心）──
   const cnImpact = extractCnImpact(desc);
   if (cnImpact) return cnImpact;
-  const d = desc.toUpperCase();
   // ── 按方位部分关闭 (TWY V1 CLSD NORTH OF TWY T13, DUE TO ...) ──
   const twyDirMed = twyDirSummary(desc);
   if (twyDirMed) return twyDirMed;
@@ -2179,6 +2225,8 @@ function summarizeMed(desc) {
   if (twyCn) return `${twyCn[1]} 关闭${/不停航施工/.test(desc) ? '(不停航施工)' : ''}`;
   const twyClsd = d.match(/TWY\s+(\w[\w-]*)\s+CLSD\s+BTN\s+(?:TWY\s+)?(\w[\w-]*)\s+AND\s+(?:TWY\s+)?(\w[\w-]*)/);
   if (twyClsd) return `${twyClsd[1]} (${twyClsd[2]}-${twyClsd[3]}) 关闭`;
+  const twyLinkMed = d.match(/TWY\s+((?:LINK|L)\s*\d+|[A-Z][\w-]*\s+\d+)\s+(?:CLSD|CLOSED)/);
+  if (twyLinkMed) return `${twyLinkMed[1].replace(/\s+/g, ' ')} 关闭`;
   const twyClsd2 = d.match(/TWY\s+(\w[\w-]*)\s+CLSD/);
   if (twyClsd2) return `${twyClsd2[1]} 关闭`;
   const rw = d.match(/\b(?:RWY|RUNWAY)\s*([\dRLC/]+)\s*(?:CLSD|CLOSED)/);
@@ -2199,6 +2247,8 @@ function summarizeMed(desc) {
 // ── 滑行道按方位部分关闭：TWY V1 CLSD NORTH OF TWY T13, DUE TO ... ──
 function twyDirSummary(desc) {
   const d = desc.toUpperCase();
+  const m2 = d.match(/TWY\s+([A-Z][\w-]*)\s+(NORTH|SOUTH|EAST|WEST)\s+(?:CLSD|CLOSED)\s+(?:BTN|BETWEEN)\s+(?:TWY\s+)?([A-Z][\w-]*)\s+AND\s+(?:TWY\s+)?([A-Z][\w-]*)/);
+  if (m2) return `${m2[1]} (${m2[3]}-${m2[4]}) 关闭${twyReasonSuffix(d)}`;
   const m = d.match(/TWY\s+([A-Z][\w-]*)\s+(?:CLSD|CLOSED)\s+(NORTH|SOUTH|EAST|WEST)\s+OF\s+(?:TWY\s+|INT\s+)?([A-Z][\w-]*)/);
   if (!m) return null;
   const dir = { NORTH: '以北', SOUTH: '以南', EAST: '以东', WEST: '以西' }[m[2]];
@@ -2237,7 +2287,7 @@ function twyIntSummary(desc) {
   if (alt) {
     const pts = twyEndpoints(alt[2]);
     if (pts.length >= 2) return `${alt[1]} (${pts[0]}-${pts[pts.length - 1]}) 关闭${twyReasonSuffix(d)}`;
-    if (pts.length === 1) return `${alt[1]} (${pts[0]}) 关闭${twyReasonSuffix(d)}`;
+    if (pts.length === 1) return `${alt[1]} 关闭${twyReasonSuffix(d)}`;
   }
   let rest = d;
   // 先摘出 BTN/BETWEEN ... CLSD 区段，避免把端点交叉口误判为"交叉口关闭"
@@ -2246,7 +2296,7 @@ function twyIntSummary(desc) {
   while ((m = reS.exec(d)) !== null) {
     const pts = twyEndpoints(m[2]);
     if (pts.length >= 2) segs.push(`${m[1]} (${pts[0]}-${pts[pts.length - 1]}) 关闭${twyReasonSuffix(d)}`);
-    else if (pts.length === 1) segs.push(`${m[1]} (${pts[0]}) 关闭${twyReasonSuffix(d)}`);
+    else if (pts.length === 1) segs.push(`${m[1]} 关闭${twyReasonSuffix(d)}`);
     rest = rest.replace(m[0], ' ');
   }
   // 单独关闭的交叉口（支持 INT A1, A2 CLSD）
@@ -2309,6 +2359,8 @@ function summarizeGnd(desc) {
   if (twyFmTil) return `${twyFmTil[1]} (${twyFmTil[2]}-${twyFmTil[3]}) 关闭`;
   const twyAbm = d.match(/TWY\s+(\w[\w-]*)\s+ABM\s+(.*?)\s+CLSD/);
   if (twyAbm) return `${twyAbm[1]} (ABM ${twyAbm[2]}) 关闭`;
+  const twyLink = d.match(/TWY\s+((?:LINK|L)\s*\d+|[A-Z][\w-]*\s+\d+)\s+(?:CLSD|CLOSED)/);
+  if (twyLink) return `${twyLink[1].replace(/\s+/g, ' ')} 关闭`;
   const twyOnly = d.match(/TWY\s+([A-Z][\w-]*)\s+(?:CLSD|CLOSED)/);
   if (twyOnly) return `${twyOnly[1]} 关闭`;
   if (d.includes('FORBIDDEN TO TURN LEFT') && d.includes('FORBIDDEN TO TURN RIGHT')) {
@@ -2342,18 +2394,23 @@ function summarizeGnd(desc) {
 
 function summarizeNav(desc) {
   const d = desc.toUpperCase();
-  if (!/\bILS\b|\bLOC\b|\bDME\b|\bNDB\b|\bVOR\b|VOR\/DME|DVOR\/DME/.test(d)) return null;
-  if (!/U\/S|OUT OF SERVICE|ON TEST|DO NOT USE|WITHDRAWN|LIMITED TO USE|不工作|不提供使用|停用|限用|使用受限|测试|禁止使用/.test(d)) return null;
+  if (!/\bILS\b|\bLOC\b|\bDME\d*|\bNDB\b|\bVOR\b|\bLDA\b|VOR\/DME|DVOR\/DME/.test(d)) return null;
+  if (!/U\/S|UNSERVICEABLE|UNSVC|OUT OF SERVICE|NOT AVBL|NOT AVAILABLE|ON TEST|DO NOT USE|WITHDRAWN|LIMITED TO USE|不工作|不提供使用|停用|限用|使用受限|测试|禁止使用/.test(d)) return null;
   const mRwy = d.match(/RWY\s*(\d{1,2}[RLC]?)/);
   const gp = /\bGP\b|GLIDE\s*PATH|下滑/.test(d) ? '下滑台' : '';
   const type = /ILS/.test(d) ? 'ILS'
     : (/(?:D)?VOR\/DME/.test(d) ? 'VOR/DME'
-    : (/\bDME\b/.test(d) ? 'DME'
-    : (/\bNDB\b/.test(d) ? 'NDB' : (/\bLOC\b/.test(d) ? 'LOC' : 'VOR'))));
+    : (/(?:LDA-)?LOC\/DME\d*/.test(d) ? 'LOC/DME'
+    : (/\bDME\d*\b/.test(d) ? 'DME'
+    : (/\bNDB\b/.test(d) ? 'NDB' : (/\bLOC\b/.test(d) ? 'LOC' : 'VOR')))));
   // ── 设施识别码：'LMN' / VKL / ILS 台名，避免只写"VOR/DME"不知是哪个台 ──
   let fid = '';
+  const mParen = d.match(/LOC\/DME\s*\d+\s*\(([A-Z]{2,4})\)/);
+  if (mParen) fid = mParen[1];
+  const mSlash = d.match(/(?:DVOR\/DME|VOR\/DME|VOR|NDB|DME|LOC|ILS)\s+([A-Z][A-Z0-9]{1,4})\//);
+  if (!fid && mSlash) fid = mSlash[1];
   const mQ = d.match(/(?:DVOR\/DME|VOR\/DME|VOR|NDB|DME|LOC|ILS)\s*['"]([A-Z0-9]{2,5})['"]/);
-  if (mQ) fid = mQ[1];
+  if (!fid && mQ) fid = mQ[1];
   if (!fid) {
     const m1 = d.match(/(?:DVOR\/DME|VOR\/DME|VOR|NDB|DME|LOC|ILS)\s+([A-Z][A-Z0-9]{1,4})(?=\s|,|\.|$)/);
     if (m1 && !/^(RWY|TWY|THE|AND|OR|DUE|NOT|FOR|U\/S|CH)$/.test(m1[1])) fid = m1[1];
@@ -2370,13 +2427,17 @@ function summarizeNav(desc) {
   else state = '状态异常';
   if (/FALSE INDICATION|错误指示|虚假指示/.test(d)) state += '，可能错误指示';
   const ident = fid ? fid + ' ' : (mRwy ? '跑道' + mRwy[1] + ' ' : '');
-  return `${ident}${type}${gp}${state}`;
+  return `${ident}${type}${gp} ${state}`;
 }
 
 // ── 障碍物/塔吊专用简练摘要 (EN+CN) ──
 function summarizeObstacle(desc) {
   const d = desc.toUpperCase();
   if (!/OBSTACLE|CRANE|WIND TURBINE|OBST ID/.test(d) && !/障碍物|塔吊|吊车/.test(desc)) return null;
+  // AIP 障碍物数据修订（非实际新增/作业）
+  if (/AMEND\s+EXISTING\s+(?:ID|OBST)/.test(d) && /CRANE|OBST/.test(d)) {
+    return '障碍物信息更新（AIP 障碍物数据）';
+  }
   // 半径 (RADIUS OF 15KM / 半径15千米)
   let radius = '';
   const mR = d.match(/RADIUS\s+OF\s*([\d.]+)\s*KM/) || desc.match(/半径\s*([\d.]+)\s*(?:千米|公里|KM)/);
@@ -2393,8 +2454,10 @@ function summarizeObstacle(desc) {
   }
   // 类型与数量
   let type = '临时障碍物', count = 0;
-  if (/CRANE/.test(d) || /塔吊|吊车/.test(desc)) {
-    type = '施工塔吊';
+  if (/CONSTRUCTION\s+(?:EQPT|EQUIPMENT)/.test(d)) {
+    type = '施工机械';
+  } else if (/CRANE/.test(d) || /塔吊|吊车/.test(desc)) {
+    type = /CRANE\s*OPR|LIT\s+CRANE|OPR\s+AT|OPR\s+WI/.test(d) ? '塔吊作业' : '施工塔吊';
     const rows1 = d.match(/CRANE\s+\d*\s*CRANE/g) || [];      // "CRANE CRANE 319/5,800"
     const rows2 = d.match(/CRANE\s+\d{1,3}[\/,]\d/g) || [];    // "CRANE 211/7,768"
     count = Math.max(rows1.length, rows2.length) || (desc.match(/\d+\s*号塔吊/g) || []).length;
@@ -2404,9 +2467,13 @@ function summarizeObstacle(desc) {
   // 无影响声明
   const noInfl = /NO INFLUENCE ON TAKEOFF AND LANDING PERFORMANCE|NO IMPACT ON TAKE-?OFF/.test(d)
     || /对起飞和着陆性能(均)?无影响|对起降性能(均)?无影响|对性能无影响/.test(desc);
+  const hgt = d.match(/MAX HGT\s*(\d+)\s*FT\s*AGL/) || d.match(/UP TO\s+(\d+)\s+AGL/) || d.match(/(\d+)\s*FT\s*AGL/);
   // 组装
-  let s = (radius ? `半径${radius}KM内` : '') + `新增${type}`;
+  let s = (radius ? `半径${radius}KM内` : '') + type;
   if (count > 0) s += `(${count}座)`;
+  if (hgt) s += `（${hgt[1]}FT AGL）`;
+  const onlyRwy = d.match(/ONLY\s+OPR(?:ATE)?\s+WHEN\s+RWY\s*([\dLRC/]+)\s+IS\s+CLSD/);
+  if (onlyRwy) s += `（仅 RWY ${onlyRwy[1]} 关闭时作业）`;
   if (impact) s += ` · ${impact}`;
   else if (noInfl) s += ' · 对起降性能无影响';
   return s;
@@ -2417,6 +2484,49 @@ function summarizeLow(desc) {
   // ── 鸟类活动：极简优先 ──
   const bird = summarizeBird(desc);
   if (bird) return bird;
+  // ── 无人机活动（UNMANNED ACFT / UAS / UAV / BVLOS）──
+  if (/UNMANNED\s+(?:ACFT|AIRCRAFT)|BEYOND\s+VISUAL\s+LINE\s+OF\s+SIGHT|\bUAS\b|\bUAV\b|\bDRONE\b|UA\s+ACT|MIL\s+UA/.test(d)) {
+    return /BEYOND\s+VISUAL\s+LINE\s+OF\s+SIGHT|\bBVLOS\b/.test(d) ? '无人机活动（超视距）' : '无人机活动（指定区域）';
+  }
+  // ── 障碍灯不工作（OBST LGT U/S），不得写成"临时障碍物" ──
+  if (/OBST\s*LGT\s*(?:U\/S|UNSERVICEABLE|OUT OF SERVICE)/.test(d)) {
+    const t = d.includes('POWER LINE TOWER') ? '输电塔'
+      : (d.includes('CHIMNEY') ? '烟囱'
+      : (d.includes('TOWER') ? '塔' : (d.includes('BLDG') ? '建筑' : '')));
+    return `障碍灯不工作${t ? '（' + t + '）' : ''}`;
+  }
+  // ── 烟花 / 激光 / 探照灯活动 ──
+  if (/FIREWORK|LASER|SEARCHLIGHT/.test(d)) {
+    const kinds = [];
+    if (/FIREWORK/.test(d)) kinds.push('烟花');
+    if (/LASER/.test(d)) kinds.push('激光');
+    if (/SEARCHLIGHT/.test(d)) kinds.push('探照灯');
+    const r = d.match(/([\d.]+)\s*NM\s+RADIUS/);
+    const h = d.match(/UP TO\s+(\d+)\s*FT\s*AGL/);
+    const bits = [];
+    if (r) bits.push(`半径${r[1]}NM`);
+    if (h) bits.push(`高${h[1]}FT`);
+    return `${kinds.join('/')}活动${bits.length ? '（' + bits.join('，') + '）' : ''}`;
+  }
+  // ── 施工机械（非塔吊）──
+  if (/CONSTRUCTION\s+(?:EQPT|EQUIPMENT)/.test(d)) {
+    const h = d.match(/MAX HGT\s*(\d+)\s*FT\s*AGL/) || d.match(/UP TO\s+(\d+)\s+AGL/);
+    return `施工机械活动${h ? `（${h[1]}FT AGL）` : ''}`;
+  }
+  // ── 进近/离场程序修订 ──
+  if (/\bAMDT\b/.test(d) && /(ILS|LOC|RNAV|VOR)/.test(d) && /\bRWY\b/.test(d)) {
+    const rwy = (d.match(/RWY\s*(\d{1,2}[RLC]?)/) || [])[1] || '';
+    const amdt = (d.match(/AMDT\s*([0-9A-Z]+)/) || [])[1] || '';
+    return `RWY${rwy} 进近程序修订${amdt ? `（AMDT ${amdt}）` : ''}`;
+  }
+  if (/TAKEOFF MINIMUMS/.test(d) && /CRANE|OBST/.test(d)) return '离场程序修订，含临时塔吊起飞标准';
+  // ── 离场程序修订（FAA: "GORMAN SEVEN DEPARTURE... AVENAL TRANSITION NA..."）──
+  const depName = d.match(/([A-Z]+(?:\s+[A-Z]+)?)\s+(?:ONE|TWO|THREE|FOUR|FIVE|SIX|SEVEN|EIGHT|NINE|TEN)\s+DEPARTURE/);
+  if (depName && /TRANSITION\s+NA|RESTRICTED|AMDT/.test(d)) {
+    const tr = d.match(/([A-Z]+)\s+TRANSITION\s+NA/);
+    const rnav = /RNAV|GPS/.test(d);
+    return `${depName[0].replace(/\s+DEPARTURE$/, '')} 离场程序修订${tr ? `（${tr[1]} 过渡${rnav ? '仅限 RNAV/GPS' : '不可用'}）` : ''}`;
+  }
   // ── 障碍物/塔吊 (EN+CN): 统一生成简练摘要 ──
   if (/OBSTACLE|CRANE|WIND TURBINE|OBST ID/.test(d) || /障碍物|塔吊|吊车/.test(desc)) {
     const s = summarizeObstacle(desc);
@@ -2425,6 +2535,14 @@ function summarizeLow(desc) {
   // ── 中文障碍物通告：优先提取影响信息 ──
   const cnImpact = extractCnImpact(desc);
   if (cnImpact) return cnImpact;
+  // ── 机位 VDGS / TSAT 故障 ──
+  if (d.includes('VISUAL-DOCKING-GUIDANCE-SYSTEM') && /U\/S|TROUBLE|UNSERVICEABLE/.test(d)) {
+    const m = d.match(/SPOT\s+(\d+)(?:\s+(?:THRU|TO)\s+(\d+))?/);
+    const spots = m ? (m[2] ? `${m[1]}–${m[2]} 号机位` : `${m[1]} 号机位`) : '机位';
+    return d.includes('TSAT') ? `${spots} TSAT 显示不可用（VDGS 故障）` : `${spots} VDGS 不可用`;
+  }
+  // ── 跑道侵入警告系统暂停 ──
+  if (d.includes('RWY INCURSION WARNING') && /SUSPEND|U\/S|NOT AVBL|OUT OF SERVICE/.test(d)) return '跑道侵入警告系统暂停（维护）';
   // ── 英文模式：机位关闭（ACFT STAND / PARKING STAND 统一称停机位）──
   if (!/\b(?:TWY|TXL)\b/.test(d) && (d.includes('PARKING STAND') || d.includes('PRKG STAND') || d.includes('ACFT STAND') || d.includes('AIRCRAFT STAND')) && d.includes('CLSD')) {
     const m = d.match(/(?:PARKING|PRKG|ACFT|AIRCRAFT)\s+STAND\s*([\w,/-]+)(?:\s*(?:AND|TO|-)\s*(?:ACFT\s+|AIRCRAFT\s+)?(?:PARKING\s+|PRKG\s+)?(?:STAND\s*)?([\w,/-]+))?/);
@@ -2458,6 +2576,8 @@ function summarizeLow(desc) {
     return m ? `机场附加限制(${m[1]}滑行路线)` : '机场附加滑行限制';
   }
   // 跑道关闭(含因施工 WIP 关闭): 保留"跑道关闭"性质, 避免被 WIP 兜底成"施工区域注意"
+  const rwEntry = d.match(/(?:RWY|RUNWAY)\s*([\dLRC/]+)\s+(?:ENRTY|ENTRY)\s*\/\s*EXIT\s+([\w/,]+)\s+CLSD/);
+  if (rwEntry) return `${rwEntry[1]} 出入口 ${rwEntry[2].replace(/,/g, '/')} 关闭`;
   const rwClsd = d.match(/\b(?:RWY|RUNWAY)\s*([\dRLC/]+)\s*(?:CLSD|CLOSED)/);
   if (rwClsd) return `跑道${rwClsd[1]}关闭`;
   if (/\bINT\s+[A-Z][\w-]*(?:\s*[,/]\s*[A-Z][\w-]*)*\s+(?:CLSD|CLOSED)\b|\bTWY\s+[A-Z][\w-]*\s+(?:BTN|BETWEEN)\b/.test(d)) {
@@ -2470,21 +2590,25 @@ function summarizeLow(desc) {
     const m = d.match(/TWY\s+([A-Z][A-Z0-9]{0,2})(?=\s|$)/);
     return m ? `${m[1]} 关闭` : '滑行道关闭(时段无关)';
   }
-  if (d.includes('UA ACT') || d.includes('MIL UA')) {
-    const m = d.match(/SFC-(\d+)M AGL/);
-    return m ? `无人机活动(高度${m[1]}M内)` : '无人机/空域活动注意';
-  }
   if (d.includes('PARAMOTOR')) return '动力伞活动注意';
+  if (/MANDATORY INFO SIGN/.test(d) && /REMOVED/.test(d)) {
+    const rwy = (d.match(/RWY\s*([\dLRC/]+)/) || [])[1];
+    const at = (d.match(/\bAT\s+([A-Z][\w-]*)/) || [])[1];
+    return `${rwy ? rwy + ' ' : ''}${at ? at + ' ' : ''}强制信息牌因施工移除`;
+  }
   if (d.includes('WIP')) return '施工区域注意';
   // ── TRIGGER NOTAM / AIP 修订类 ──
   if (d.includes('TRIGGER NOTAM')) {
-    const am = d.match(/(?:AMDT|SUP)\s*([0-9]{1,3}\/[0-9]{2})/);
-    const wef = d.match(/WEF\s+(\d{2}\s+[A-Z]{3}\s+\d{4})/);
+    const am = d.match(/(?:AMDT|SUP)\s*([0-9]{1,3}\/[0-9]{2,4})/);
+    const wef = d.match(/WEF\s+(\d{2}\s+[A-Z]{3}\s+\d{2,4})/);
     const kind = d.includes('SUP') ? '补充资料' : '修订';
     const adCode = d.match(/\b([A-Z]{4})\s+AD\b/);
     const secs = Array.from(d.matchAll(/\bAD\s*2\.(\d+)/g)).map(m => m[1]).filter((v, i, a) => a.indexOf(v) === i);
     const chartMap = { ADC: '机场图', APDC: '停机位图', GMC: '地面活动图', SID: '离场图', STAR: '进场图', IAC: '进近图', VAC: '目视进近图', AOC: '障碍物图' };
     const charts = Array.from(d.matchAll(/\b(ADC|APDC|GMC|SID|STAR|IAC|VAC|AOC)\b/g)).map(m => chartMap[m[1]]).filter((v, i, a) => a.indexOf(v) === i);
+    if (d.includes('NOISE RESTRICTIONS')) {
+      return `AIP SUP${am ? ' ' + am[1] : ''} 生效${wef ? '（' + wef[1] + '）' : ''}：伦敦机场噪声限制通告（替代 SUP 010/26）`;
+    }
     let what = '';
     if (adCode || secs.length) {
       const parts = [];
@@ -2496,6 +2620,8 @@ function summarizeLow(desc) {
     const extra = d.includes('CONSTRUCTION') ? '，含施工与运行限制' : '';
     return `AIRAC ${kind}${am ? ' ' + am[1] : ''} 生效${wef ? '（' + wef[1] + '）' : ''}${what}${extra}`;
   }
+  const aipSup = summarizeAipSup(desc);
+  if (aipSup) return aipSup;
   if (d.includes('REF AIP') || d.includes('RULES CHANGED') || d.includes('CHANGED AS FLW')) {
     if (d.includes('FOLLOW-ME')) return '机坪/机位使用规则变更（部分机位需 Follow-me 引导）';
     return 'AIP/机坪使用规则变更（详见原文）';
